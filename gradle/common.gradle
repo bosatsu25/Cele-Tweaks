@@ -32,6 +32,33 @@ sourceSets {
     }
 }
 
+// Client game test (`runClientGameTest`): launches the real client with the mod, never shipped.
+// Sources live in the shared src/gametest, like src/main.
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'celetweaks-gametest'
+        enableGameTests = false
+        enableClientGameTests = true
+    }
+}
+
+sourceSets {
+    gametest {
+        java.srcDirs = [rootProject.file('src/gametest/java')]
+        resources.srcDirs = [rootProject.file('src/gametest/resources')]
+    }
+}
+
+// Groups main's classes and resources into one mod for dev runs; the game test mod gets its own group.
+loom {
+    mods {
+        register(rootProject.property('mod_id').toString()) {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(25) }
     withSourcesJar()

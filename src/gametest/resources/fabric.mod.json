@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "celetweaks-gametest",
+  "version": "0.0.0",
+  "name": "Cele-Tweaks client game test",
+  "description": "Launch check run by CI only. Never shipped.",
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["io.github.bosatsu25.celetweaks.gametest.CeleClientGameTest"]
+  },
+  "depends": {
+    "celetweaks": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}
