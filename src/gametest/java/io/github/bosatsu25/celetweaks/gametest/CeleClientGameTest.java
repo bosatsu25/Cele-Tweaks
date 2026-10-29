@@ -28,6 +28,7 @@ public final class CeleClientGameTest implements FabricClientGameTest {
 
     /** Puts something on screen for each world-facing feature, next to the player. */
     private static final List<String> SCENE = List.of(
+            "gamemode creative @a",
             // Scoreboard Panel + Quiet UI
             "scoreboard objectives add cele_test dummy",
             "scoreboard objectives setdisplay sidebar cele_test",
@@ -37,8 +38,8 @@ public final class CeleClientGameTest implements FabricClientGameTest {
             "team join cele_team @a",
             // Quiet Chat
             "tellraw @a {\"text\":\"Cele-Tweaks game test\",\"color\":\"red\"}",
-            // Lava Highlight + Range Overlay
-            "execute at @p run setblock ~2 ~ ~ minecraft:lava",
+            // Lava Highlight (sunk into the ground so it cannot flow) + Range Overlay
+            "execute at @p run setblock ~3 ~-1 ~ minecraft:lava",
             "execute at @p run setblock ~-2 ~ ~ minecraft:beacon",
             "execute at @p run setblock ~ ~ ~3 minecraft:lightning_rod");
 

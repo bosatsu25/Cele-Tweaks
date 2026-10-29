@@ -71,13 +71,15 @@ jobs:
           path: versions/${{ matrix.mc }}/build/libs/*.jar
           retention-days: 7
 
-      # Starts the real client under a virtual display (src/gametest). Fails on a crash,
-      # a failed startup stage, or a quarantined feature.
+      # Starts the real client (src/gametest). Fails on a crash, a failed startup stage, or a
+      # quarantined feature. Loom wraps the run in xvfb-run by itself when CI is set; Mesa's
+      # Vulkan driver gives 26.3+ (OpenGL or Vulkan backend) a renderer it can fall back to.
       - name: Client game test
+        timeout-minutes: 10
         run: |
-          command -v xvfb-run >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq xvfb; }
-          xvfb-run -a -s "-screen 0 1920x1080x24" \
-            ./gradlew ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb mesa-vulkan-drivers
+          ./gradlew ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 
       - name: Upload game test output
         if: always()
