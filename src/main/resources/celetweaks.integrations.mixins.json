@@ -1,0 +1,20 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "io.github.bosatsu25.celetweaks.mixin.integration",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "io.github.bosatsu25.celetweaks.mixin.integration.IntegrationMixinPlugin",
+  "injectors": {
+    "defaultRequire": 0
+  },
+  "client": [
+    "TweakerooInventoryUtilsMixin",
+    "TweakerMoreSchematicBlockPickerMixin",
+    "LitematicaMaterialCacheMixin",
+    "ItemScrollerKeybindCallbacksMixin",
+    "SyncmaticaRemoveButtonMixin",
+    "TweakerMorePlacementRestrictionMixin",
+    "TweakerMoreLooseCaseMixin",
+    "TweakerMoreInteractionRestrictorMixin"
+  ]
+}
