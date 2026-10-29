@@ -57,8 +57,8 @@ jobs:
       - name: Build
         run: ./gradlew ":${{ matrix.mc }}:build" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 
-      # Always printed: javac does not check mixin target names, so this is how the
-      # targets are verified for every version until a client game test exists.
+      # Always printed: javac does not check mixin target names. The dump shows the real
+      # signatures when porting; the client game test below proves the targets at runtime.
       - name: Dump Minecraft API signatures
         if: always()
         run: .github/scripts/api-dump.sh "${{ matrix.mc }}"
@@ -69,4 +69,24 @@ jobs:
         with:
           name: cele-tweaks-mc${{ matrix.mc }}
           path: versions/${{ matrix.mc }}/build/libs/*.jar
+          retention-days: 7
+
+      # Starts the real client under a virtual display (src/gametest). Fails on a crash,
+      # a failed startup stage, or a quarantined feature.
+      - name: Client game test
+        run: |
+          command -v xvfb-run >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq xvfb; }
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            ./gradlew ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+
+      - name: Upload game test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gametest-mc${{ matrix.mc }}
+          path: |
+            versions/${{ matrix.mc }}/build/run/clientGameTest/screenshots/
+            versions/${{ matrix.mc }}/build/run/clientGameTest/logs/latest.log
+            versions/${{ matrix.mc }}/build/run/clientGameTest/crash-reports/
+          if-no-files-found: ignore
           retention-days: 7

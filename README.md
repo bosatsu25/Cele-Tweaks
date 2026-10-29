@@ -18,6 +18,7 @@ Minecraft **26.1.2 / 26.2 / 26.3** 向け Fabric クライアント専用 Tweaks
 ./gradlew buildAll                    # 3 バージョンすべて → versions/<mc>/build/libs/
 ./gradlew :26.3:build -Pmc=26.3       # 1 バージョンだけ（他バージョンの Minecraft を取得しない）
 ./gradlew :26.3:runClient -Pmc=26.3   # 開発用クライアント起動
+./gradlew :26.3:runClientGameTest -Pmc=26.3   # 起動テスト（CI と同じもの。実クライアントが起動する）
 ```
 
 JDK 25 が必要です。

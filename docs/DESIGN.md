@@ -49,7 +49,8 @@ Cele-Tweaks/
 │   ├── build.gradle             # Loom 適用 + common.gradle
 │   └── gradle.properties        # minecraft / loader / fabric-api / modmenu のピン、source_overlays=mc<mc>
 ├── src/main/{java,resources}    # 全版共通
-└── src/mc<mc>/{java,resources}  # その版だけの差分（同名クラスを各版が 1 つずつ持つ）
+├── src/mc<mc>/{java,resources}  # その版だけの差分（同名クラスを各版が 1 つずつ持つ）
+└── src/gametest/{java,resources} # CI 用の起動テスト（全版共通、JAR には入らない）
 ```
 
 プリプロセッサ型のツール（Stonecutter）は採用しない。非アクティブ版にソースが渡らず `compileJava NO-SOURCE` で「成功」した実例があり（CI で確認）、誤った緑は赤より悪いため。[確実]
@@ -71,12 +72,17 @@ Cele-Tweaks/
 - 範囲表示: `Minecraft.collectPerTickGizmos()` と `Gizmos.cuboid / circle`。版ごとに違うワールド描画 API を使わない。
 - 溶岩: `FluidRenderer.tesselate(...)` と `FluidRenderer.vertex(..., int color, ...)`。Fabric の 26.x 流体 API には色指定の口が無いため。
 
-Mixin のターゲット名は javac では検証されない（間違っていればゲーム起動時に落ちる）。CI の "Dump Minecraft API signatures" ステップが各版の jar から実署名を出力し、それと照合する。将来は Fabric の client game test で起動検証まで自動化する。
+Mixin のターゲット名は javac では検証されない（間違っていればゲーム起動時に落ちる）。CI の "Dump Minecraft API signatures" ステップは各版の jar から実署名を出力する（移植時の参照用）。ターゲットが実際に当たるかは、client game test（`src/gametest`）が各版の実クライアントを起動して確かめる。必須の Mixin は `defaultRequire: 1` なので、ターゲットが違えばクラスの読み込み時に落ち、テストが失敗する。
 
 ### 2.3 CI / リリース
 
 - PR と main への push で、3 版をマトリクスで並列ビルド（`./gradlew :<mc>:build -Pmc=<mc>`）。
 - 毎回、Maven リポジトリの最新版一覧と、各版の API 署名ダンプをログに出す。
+- 続けて client game test を仮想ディスプレイ上で実行（`./gradlew :<mc>:runClientGameTest -Pmc=<mc>`）。次の順に進み、クラッシュ・起動段の失敗・隔離が 1 件でもあれば失敗。スクリーンショットとログは成果物として 7 日間保存。
+  1. バニラ機能（Core / Vanilla）をすべて ON にする。
+  2. 機能一覧画面と、全 25 機能の設定画面を開く。
+  3. シングルプレイのワールドに入り、サイドバーの目標・色付きチーム・色付きチャット・溶岩・ビーコン・避雷針を用意する。
+  4. ワールド内で Block Filter を OFF→ON してチャンク再描画の経路を通す。
 - タグ `v*` で `buildAll` し、3 版の JAR を 1 つの GitHub Release に添付。
 - バージョン表記は `MAJOR.MINOR.PATCH+mc<MC>`（例 `0.1.0+mc26.3`）。
 
@@ -155,6 +161,6 @@ io.github.bosatsu25.celetweaks
 
 ## 8. 未確認事項
 
-1. ゲーム内での起動と各機能の動作（CI はコンパイルと Mixin ターゲット署名の照合まで）。
+1. 各機能が意図どおりに働くか。client game test が確かめるのは、起動・Mixin の適用・画面の表示・ワールド内で例外が出ないことまでで、ガードが本当に操作を止めるか、描画の見た目が正しいかは判定しない。
 2. Tweakeroo / TweakerMore / Litematica / Syncmatica の 26.2 / 26.3 ビルドでのクラス名・メソッド名。違っていれば該当連携は no-op になる（クラッシュはしない）。[推測]
 3. Sodium 導入時、溶岩ハイライトは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]
