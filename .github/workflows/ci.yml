@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (mc ${{ matrix.mc }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mc: ["26.1.2", "26.2", "26.3"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Cache Loom
+        uses: actions/cache@v4
+        with:
+          path: |
+            versions/${{ matrix.mc }}/.gradle/loom-cache
+            .gradle/loom-cache
+          key: loom-${{ matrix.mc }}-${{ hashFiles('build.gradle.kts', 'settings.gradle.kts', 'gradle.properties', 'versions/*/gradle.properties') }}
+          restore-keys: loom-${{ matrix.mc }}-
+
+      # Prints what the Maven repositories actually offer, so a wrong pin in
+      # versions/<mc>/gradle.properties can be corrected from the log alone.
+      - name: Print available versions
+        run: |
+          set +e
+          echo "== fabric-api builds for +${{ matrix.mc }}"
+          curl -sS https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*</version>' | grep -F "+${{ matrix.mc }}<" | tail -n 20
+          echo "== fabric-loader (last 5)"
+          curl -sS https://maven.fabricmc.net/net/fabricmc/fabric-loader/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -n 5
+          echo "== modmenu (all)"
+          curl -sS https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tr '\n' ' '; echo
+          echo "== fabric-loom (last 8)"
+          curl -sS https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -n 8
+
+      - name: Build
+        run: ./gradlew ":${{ matrix.mc }}:build" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+
+      # Always printed: javac does not check mixin target names, so this is how the
+      # targets are verified for every version until a client game test exists.
+      - name: Dump Minecraft API signatures
+        if: always()
+        run: .github/scripts/api-dump.sh "${{ matrix.mc }}"
+
+      - name: Upload jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cele-tweaks-mc${{ matrix.mc }}
+          path: versions/${{ matrix.mc }}/build/libs/*.jar
+          retention-days: 7

@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build all versions
+        run: ./gradlew buildAll --stacktrace --no-daemon
+      - name: Collect runtime jars
+        run: |
+          mkdir -p dist
+          for v in versions/*/; do
+            find "$v/build/libs" -name 'cele-tweaks-*.jar' ! -name '*-sources.jar' -exec cp {} dist/ \;
+          done
+          ls -la dist
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Cele-Tweaks ${{ github.ref_name }}"
+          files: dist/*.jar
+          generate_release_notes: true

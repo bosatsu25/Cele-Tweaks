@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "celetweaks",
+  "version": "${version}",
+  "name": "Cele-Tweaks",
+  "description": "Client-only visual and guard tweaks for builders. No automation, no server installation, no custom packets.",
+  "authors": ["bosatsu25"],
+  "contact": {
+    "sources": "https://github.com/bosatsu25/Cele-Tweaks",
+    "issues": "https://github.com/bosatsu25/Cele-Tweaks/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["io.github.bosatsu25.celetweaks.CeleTweaksClient"],
+    "modmenu": ["io.github.bosatsu25.celetweaks.gui.CeleModMenu"]
+  },
+  "mixins": [
+    "celetweaks.mixins.json",
+    "celetweaks.version.mixins.json",
+    "celetweaks.integrations.mixins.json"
+  ],
+  "depends": {
+    "minecraft": "${minecraft_version}",
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*"
+  },
+  "custom": {
+    "celetweaks": {
+      "side": "client-only",
+      "automation": false,
+      "customPlayProtocol": false
+    }
+  }
+}

@@ -1,0 +1,61 @@
+// Shared build logic, applied by versions/<mc>/build.gradle.
+// Sources: src/main (all versions) + src/<overlay> for each entry of `source_overlays`.
+
+def mcVersion = project.name
+
+version = "${rootProject.property('mod_version')}+mc${mcVersion}"
+group = rootProject.property('maven_group')
+base { archivesName = rootProject.property('archives_base_name') }
+
+repositories {
+    maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/releases/' }
+    mavenCentral()
+}
+
+dependencies {
+    // 26.x ships un-obfuscated: non-remapping Loom, no mappings line.
+    minecraft "com.mojang:minecraft:${project.property('minecraft_version')}"
+    implementation "net.fabricmc:fabric-loader:${project.property('loader_version')}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.property('fabric_api_version')}"
+    if (project.hasProperty('modmenu_version')) {
+        compileOnly "com.terraformersmc:modmenu:${project.property('modmenu_version')}"
+    }
+}
+
+def overlays = (project.findProperty('source_overlays') ?: '').toString()
+        .split(',').collect { it.trim() }.findAll { !it.isEmpty() }
+
+sourceSets {
+    main {
+        java.srcDirs = [rootProject.file('src/main/java')] + overlays.collect { rootProject.file("src/${it}/java") }
+        resources.srcDirs = [rootProject.file('src/main/resources')] + overlays.collect { rootProject.file("src/${it}/resources") }
+    }
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(25) }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
+}
+
+def metadata = [
+        version           : project.version.toString(),
+        minecraft_version : mcVersion,
+        loader_version    : project.property('loader_version').toString(),
+        fabric_api_version: project.property('fabric_api_version').toString(),
+]
+
+processResources {
+    inputs.properties(metadata)
+    filesMatching('fabric.mod.json') { expand(metadata) }
+}
+
+jar {
+    from(rootProject.file('LICENSE')) { rename { "${it}_${base.archivesName.get()}" } }
+    from(rootProject.file('NOTICE'))
+}
