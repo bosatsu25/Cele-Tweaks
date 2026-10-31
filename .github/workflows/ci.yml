@@ -5,9 +5,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # release.yml runs this whole workflow first and releases only the jars it tested.
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # github.workflow is the caller's name when release.yml calls this, so a release never cancels CI.
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,19 +23,19 @@ jobs:
       matrix:
         mc: ["26.1.2", "26.2", "26.3"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 25
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Cache Loom
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             versions/${{ matrix.mc }}/.gradle/loom-cache
@@ -65,7 +68,7 @@ jobs:
 
       - name: Upload jar
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cele-tweaks-mc${{ matrix.mc }}
           path: versions/${{ matrix.mc }}/build/libs/*.jar
@@ -83,7 +86,7 @@ jobs:
 
       - name: Upload game test output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gametest-mc${{ matrix.mc }}
           path: |

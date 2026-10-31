@@ -83,7 +83,8 @@ Mixin のターゲット名は javac では検証されない（間違ってい�
   2. 機能一覧画面と、全 25 機能の設定画面を開く。
   3. シングルプレイのワールドに入り、サイドバーの目標・色付きチーム・色付きチャット・溶岩・ビーコン・避雷針を用意する。
   4. ワールド内で Block Filter を OFF→ON してチャンク再描画の経路を通す。
-- タグ `v*` で `buildAll` し、3 版の JAR を 1 つの GitHub Release に添付。
+- タグ `v*` を push すると、`release.yml` がまず CI 全体（3 版のビルドと client game test）を `workflow_call` で実行する。失敗すればリリースしない。成功したら、CI がビルドして起動テストに使った JAR そのもの（再ビルドしない）を 1 つの GitHub Release に添付する。
+- `release.yml` を手動実行（workflow_dispatch）すると、同じ確認と JAR の収集までを行い、Release は作らない（リハーサル）。
 - バージョン表記は `MAJOR.MINOR.PATCH+mc<MC>`（例 `0.1.0+mc26.3`）。
 
 ---
