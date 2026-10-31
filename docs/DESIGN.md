@@ -83,6 +83,7 @@ Mixin のターゲット名は javac では検証されない（間違ってい�
   2. 機能一覧画面と、全 25 機能の設定画面を開く。
   3. シングルプレイのワールドに入り、サイドバーの目標・色付きチーム・色付きチャット・溶岩・ビーコン・避雷針を用意する。
   4. ワールド内で Block Filter を OFF→ON してチャンク再描画の経路を通す。
+  5. 別のワールドで、ガード 5 機能が効くべき操作を止め、対照の操作は通すことを確かめる（[FEATURE_CATALOG.md](FEATURE_CATALOG.md) の「自動テストで確かめている挙動」）。
 - 別ジョブ `integration (mc <版>)` で、Litematica / Tweakeroo / TweakerMore / Syncmatica / Item Scroller / MaLiLib の各版向け最新ビルドを Modrinth から取得し（`.github/scripts/fetch-integration-mods.sh`）、同じ client game test を `-Pintegration_mods=<dir>` 付きで実行する。連携機能も ON になり、さらに連携用 Mixin がすべて相手のメソッドに 1 か所以上フックしたことを確かめる。取得できた版はジョブの Summary に表で出る。
 - タグ `v*` を push すると、`release.yml` がまず CI 全体（3 版のビルドと client game test）を `workflow_call` で実行する。失敗すればリリースしない。成功したら、CI がビルドして起動テストに使った JAR そのもの（再ビルドしない）を 1 つの GitHub Release に添付する。
 - `release.yml` を手動実行（workflow_dispatch）すると、同じ確認と JAR の収集までを行い、Release は作らない（リハーサル）。
@@ -165,6 +166,6 @@ io.github.bosatsu25.celetweaks
 
 ## 8. 未確認事項
 
-1. 各機能が意図どおりに働くか。client game test が確かめるのは、起動・Mixin の適用・画面の表示・ワールド内で例外が出ないことまでで、ガードが本当に操作を止めるか、描画の見た目が正しいかは判定しない。
+1. 各機能が意図どおりに働くか。バニラのガード 5 機能は、止めるべき操作を止め、対照の操作は通すことを client game test で確認済み。[確実] 連携機能の判定の中身、描画・画面表示の見た目、ホットキーの操作感は未確認。
 2. 外部 MOD 連携の接続先は、各 MOD の 26.1.2 / 26.2 / 26.3 向けソースで実在を確認済み（[FEATURE_CATALOG.md](FEATURE_CATALOG.md) 末尾の表）。[確実] 実際に配布されている JAR へのフックは CI の integration ジョブで確かめていて、3 版とも 8 個すべてがフックした（2026-10-31）。[確実] 連携機能が意図どおりに働くか（判定の中身）は未確認。
 3. Sodium 導入時、溶岩源の色付けは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]
