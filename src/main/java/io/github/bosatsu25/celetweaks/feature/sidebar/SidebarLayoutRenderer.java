@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.scoreboard;
+package io.github.bosatsu25.celetweaks.feature.sidebar;
 
 import io.github.bosatsu25.celetweaks.gui.Gfx;
 import net.minecraft.client.Minecraft;
@@ -17,15 +17,15 @@ import java.util.Comparator;
 import java.util.List;
 
 /** Lays out one page of the sidebar objective and draws it at the configured anchor. */
-public final class ScoreboardPanelRenderer {
+public final class SidebarLayoutRenderer {
     private static final int PAD = 3;
 
-    private ScoreboardPanelRenderer() {}
+    private SidebarLayoutRenderer() {}
 
     private record Row(Component name, Component value) {}
 
-    public static void render(GuiGraphicsExtractor graphics, Objective objective, ScoreboardPanelFeature feature) {
-        ScoreboardPanelFeature.Config cfg = feature.config();
+    public static void render(GuiGraphicsExtractor graphics, Objective objective, SidebarLayoutFeature feature) {
+        SidebarLayoutFeature.Config cfg = feature.config();
         Font font = Minecraft.getInstance().font;
         Scoreboard scoreboard = objective.getScoreboard();
         NumberFormat format = objective.numberFormatOrDefault(StyledFormat.SIDEBAR_DEFAULT);
@@ -61,7 +61,7 @@ public final class ScoreboardPanelRenderer {
         float scale = (float) Math.max(0.25, Math.min(3.0, cfg.scale));
         int scaledW = Math.round(panelW * scale);
         int scaledH = Math.round(panelH * scale);
-        ScoreboardPanelFeature.Anchor anchor = cfg.anchor == null ? ScoreboardPanelFeature.Anchor.RIGHT : cfg.anchor;
+        SidebarLayoutFeature.Anchor anchor = cfg.anchor == null ? SidebarLayoutFeature.Anchor.RIGHT : cfg.anchor;
         int x = graphics.guiWidth() * anchor.column / 2 - scaledW * anchor.column / 2 + cfg.offsetX;
         int y = graphics.guiHeight() * anchor.row / 2 - scaledH * anchor.row / 2 + cfg.offsetY;
         x = Math.max(0, Math.min(x, graphics.guiWidth() - scaledW));

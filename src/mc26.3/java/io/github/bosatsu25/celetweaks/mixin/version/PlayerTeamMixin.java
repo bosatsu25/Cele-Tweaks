@@ -1,6 +1,6 @@
 package io.github.bosatsu25.celetweaks.mixin.version;
 
-import io.github.bosatsu25.celetweaks.feature.quiet.QuietUiFeature;
+import io.github.bosatsu25.celetweaks.feature.grey.GreyColorsFeature;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.TeamColor;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +14,7 @@ import java.util.Optional;
 @Mixin(PlayerTeam.class)
 public abstract class PlayerTeamMixin {
     @Inject(method = "getColor()Ljava/util/Optional;", at = @At("HEAD"), cancellable = true)
-    private void celetweaks$quietTeamColor(CallbackInfoReturnable<Optional<TeamColor>> cir) {
-        if (QuietUiFeature.neutralTeams()) cir.setReturnValue(Optional.of(TeamColor.GRAY));
+    private void celetweaks$greyTeamColor(CallbackInfoReturnable<Optional<TeamColor>> cir) {
+        if (GreyColorsFeature.greyTeams()) cir.setReturnValue(Optional.of(TeamColor.GRAY));
     }
 }

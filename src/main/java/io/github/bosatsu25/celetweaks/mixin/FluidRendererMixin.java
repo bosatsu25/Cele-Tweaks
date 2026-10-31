@@ -1,6 +1,6 @@
 package io.github.bosatsu25.celetweaks.mixin;
 
-import io.github.bosatsu25.celetweaks.feature.lava.LavaHighlightFeature;
+import io.github.bosatsu25.celetweaks.feature.lava.LavaSourceTintFeature;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.core.BlockPos;
@@ -20,16 +20,16 @@ public abstract class FluidRendererMixin {
     @Inject(method = TESSELATE, at = @At("HEAD"))
     private void celetweaks$beginFluid(BlockAndTintGetter level, BlockPos pos, FluidRenderer.Output output,
                                        BlockState blockState, FluidState fluidState, CallbackInfo ci) {
-        LavaHighlightFeature.beginFluid(fluidState);
+        LavaSourceTintFeature.beginFluid(fluidState);
     }
 
     @Inject(method = TESSELATE, at = @At("RETURN"))
     private void celetweaks$endFluid(CallbackInfo ci) {
-        LavaHighlightFeature.endFluid();
+        LavaSourceTintFeature.endFluid();
     }
 
     @ModifyVariable(method = "vertex(Lcom/mojang/blaze3d/vertex/VertexConsumer;FFFIFFI)V", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     private int celetweaks$tintLava(int color) {
-        return LavaHighlightFeature.tintVertex(color);
+        return LavaSourceTintFeature.tintVertex(color);
     }
 }

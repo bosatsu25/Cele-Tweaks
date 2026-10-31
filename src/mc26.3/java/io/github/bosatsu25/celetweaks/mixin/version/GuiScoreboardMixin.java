@@ -1,7 +1,7 @@
 package io.github.bosatsu25.celetweaks.mixin.version;
 
-import io.github.bosatsu25.celetweaks.feature.scoreboard.ScoreboardPanelFeature;
-import io.github.bosatsu25.celetweaks.feature.scoreboard.ScoreboardPanelRenderer;
+import io.github.bosatsu25.celetweaks.feature.sidebar.SidebarLayoutFeature;
+import io.github.bosatsu25.celetweaks.feature.sidebar.SidebarLayoutRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.world.scores.Objective;
@@ -16,9 +16,9 @@ public abstract class GuiScoreboardMixin {
     @Inject(method = "displayScoreboardSidebar(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/world/scores/Objective;)V",
             at = @At("HEAD"), cancellable = true)
     private void celetweaks$replaceSidebar(GuiGraphicsExtractor graphics, Objective objective, CallbackInfo ci) {
-        ScoreboardPanelFeature feature = ScoreboardPanelFeature.instance();
+        SidebarLayoutFeature feature = SidebarLayoutFeature.instance();
         if (feature == null || !feature.isEnabled()) return;
-        ScoreboardPanelRenderer.render(graphics, objective, feature);
+        SidebarLayoutRenderer.render(graphics, objective, feature);
         ci.cancel();
     }
 }

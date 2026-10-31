@@ -1,6 +1,6 @@
 package io.github.bosatsu25.celetweaks.mixin.integration;
 
-import io.github.bosatsu25.celetweaks.feature.integration.SharedPlanLockFeature;
+import io.github.bosatsu25.celetweaks.feature.integration.SyncmaticaRemoveLockFeature;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,6 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SyncmaticaRemoveButtonMixin {
     @Inject(method = "actionPerformedWithButton", at = @At("HEAD"), cancellable = true, require = 0, remap = false)
     private void celetweaks$guardRemove(CallbackInfo ci) {
-        if (SharedPlanLockFeature.shouldBlock(this)) ci.cancel();
+        if (SyncmaticaRemoveLockFeature.shouldBlock(this)) ci.cancel();
     }
 }

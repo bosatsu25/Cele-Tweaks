@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.memo;
+package io.github.bosatsu25.celetweaks.feature.notes;
 
 import io.github.bosatsu25.celetweaks.gui.CeleScreens;
 import io.github.bosatsu25.celetweaks.gui.Gfx;
@@ -11,16 +11,16 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /** One EditBox per line, paged. Saved when the screen closes. */
-public final class SiteMemoScreen extends Screen {
+public final class TextNotesScreen extends Screen {
     private static final int ROW_HEIGHT = 22;
     private final Screen parent;
     private final List<String> lines;
     private int page;
 
-    public SiteMemoScreen(Screen parent) {
-        super(Component.translatable("celetweaks.memo.title"));
+    public TextNotesScreen(Screen parent) {
+        super(Component.translatable("celetweaks.text_notes.title"));
         this.parent = parent;
-        this.lines = SiteMemoFeature.load();
+        this.lines = TextNotesFeature.load();
     }
 
     private int rowsPerPage() {
@@ -32,13 +32,13 @@ public final class SiteMemoScreen extends Screen {
         int width = Math.min(420, this.width - 20);
         int left = (this.width - width) / 2;
         int perPage = rowsPerPage();
-        int pages = (SiteMemoFeature.MAX_LINES + perPage - 1) / perPage;
+        int pages = (TextNotesFeature.MAX_LINES + perPage - 1) / perPage;
         page = Math.max(0, Math.min(page, pages - 1));
         int y = 30;
-        for (int i = page * perPage; i < Math.min(SiteMemoFeature.MAX_LINES, (page + 1) * perPage); i++) {
+        for (int i = page * perPage; i < Math.min(TextNotesFeature.MAX_LINES, (page + 1) * perPage); i++) {
             int index = i;
             EditBox box = new EditBox(font, left + 24, y, width - 24, 18, Component.literal("line " + (i + 1)));
-            box.setMaxLength(SiteMemoFeature.MAX_LINE_LENGTH);
+            box.setMaxLength(TextNotesFeature.MAX_LINE_LENGTH);
             box.setValue(lines.get(i));
             box.setResponder(text -> lines.set(index, text));
             addRenderableWidget(box);
@@ -62,7 +62,7 @@ public final class SiteMemoScreen extends Screen {
         int left = (this.width - width) / 2;
         int perPage = rowsPerPage();
         int y = 35;
-        for (int i = page * perPage; i < Math.min(SiteMemoFeature.MAX_LINES, (page + 1) * perPage); i++) {
+        for (int i = page * perPage; i < Math.min(TextNotesFeature.MAX_LINES, (page + 1) * perPage); i++) {
             Gfx.text(graphics, font, String.valueOf(i + 1), left, y, 0xFF808080, false);
             y += ROW_HEIGHT;
         }
@@ -70,7 +70,7 @@ public final class SiteMemoScreen extends Screen {
 
     @Override
     public void onClose() {
-        SiteMemoFeature.save(lines);
+        TextNotesFeature.save(lines);
         CeleScreens.open(parent);
     }
 }

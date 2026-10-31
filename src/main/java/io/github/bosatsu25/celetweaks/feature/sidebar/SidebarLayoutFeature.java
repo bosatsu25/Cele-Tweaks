@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.scoreboard;
+package io.github.bosatsu25.celetweaks.feature.sidebar;
 
 import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
 import io.github.bosatsu25.celetweaks.config.Range;
@@ -9,9 +9,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 /** Draws the sidebar objective as an anchored, scalable, paged panel. Server values are only displayed. */
-public final class ScoreboardPanelFeature extends Feature {
-    public static final String NEXT_PAGE = "scoreboard_panel.next_page";
-    public static final String PREVIOUS_PAGE = "scoreboard_panel.previous_page";
+public final class SidebarLayoutFeature extends Feature {
+    public static final String NEXT_PAGE = "sidebar_layout.next_page";
+    public static final String PREVIOUS_PAGE = "sidebar_layout.previous_page";
 
     /** Nine screen anchors; the panel's matching corner / edge midpoint is placed on the anchor. */
     public enum Anchor {
@@ -30,14 +30,14 @@ public final class ScoreboardPanelFeature extends Feature {
 
     private int page;
 
-    public ScoreboardPanelFeature() {
-        super(FeatureDefinition.SCOREBOARD_PANEL);
+    public SidebarLayoutFeature() {
+        super(FeatureDefinition.SIDEBAR_LAYOUT);
     }
 
     @Override
     public void init() {
-        HotkeyManager.register(NEXT_PAGE, Component.translatable("celetweaks.hotkey.scoreboard_panel.next_page"), () -> page++);
-        HotkeyManager.register(PREVIOUS_PAGE, Component.translatable("celetweaks.hotkey.scoreboard_panel.previous_page"), () -> page--);
+        HotkeyManager.register(NEXT_PAGE, Component.translatable("celetweaks.hotkey.sidebar_layout.next_page"), () -> page++);
+        HotkeyManager.register(PREVIOUS_PAGE, Component.translatable("celetweaks.hotkey.sidebar_layout.previous_page"), () -> page--);
     }
 
     @Override
@@ -53,10 +53,10 @@ public final class ScoreboardPanelFeature extends Feature {
         return page;
     }
 
-    public static ScoreboardPanelFeature instance() {
-        return FeatureManager.get().component(FeatureDefinition.SCOREBOARD_PANEL.id())
-                .filter(ScoreboardPanelFeature.class::isInstance)
-                .map(ScoreboardPanelFeature.class::cast)
+    public static SidebarLayoutFeature instance() {
+        return FeatureManager.get().component(FeatureDefinition.SIDEBAR_LAYOUT.id())
+                .filter(SidebarLayoutFeature.class::isInstance)
+                .map(SidebarLayoutFeature.class::cast)
                 .orElse(null);
     }
 

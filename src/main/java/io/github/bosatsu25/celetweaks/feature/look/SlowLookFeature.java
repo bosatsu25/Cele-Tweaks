@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.aim;
+package io.github.bosatsu25.celetweaks.feature.look;
 
 import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
 import io.github.bosatsu25.celetweaks.config.Range;
@@ -8,22 +8,22 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 /**
- * Hold-to-use precision aiming: while its key combination is held, mouse sensitivity is scaled by a
+ * Hold-to-use slow look: while its key combination is held, mouse sensitivity is scaled by a
  * factor of the player's own setting; releasing the keys, leaving the world or disabling the feature
  * puts the original value back.
  */
-public final class PrecisionAimFeature extends Feature {
-    public static final String HOLD_ACTION = "precision_aim.hold";
+public final class SlowLookFeature extends Feature {
+    public static final String HOLD_ACTION = "slow_look.hold";
 
     private Double original;
 
-    public PrecisionAimFeature() {
-        super(FeatureDefinition.PRECISION_AIM);
+    public SlowLookFeature() {
+        super(FeatureDefinition.SLOW_LOOK);
     }
 
     @Override
     public void init() {
-        HotkeyManager.register(HOLD_ACTION, Component.translatable("celetweaks.hotkey.precision_aim.hold"), () -> {});
+        HotkeyManager.register(HOLD_ACTION, Component.translatable("celetweaks.hotkey.slow_look.hold"), () -> {});
     }
 
     @Override

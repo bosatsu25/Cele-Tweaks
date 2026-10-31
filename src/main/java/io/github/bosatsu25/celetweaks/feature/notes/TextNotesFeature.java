@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.memo;
+package io.github.bosatsu25.celetweaks.feature.notes;
 
 import io.github.bosatsu25.celetweaks.CeleTweaksClient;
 import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
@@ -17,29 +17,29 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A small local notepad (coordinates, build order, to-dos). Stored in config/celetweaks/memo.txt, never sent anywhere. */
-public final class SiteMemoFeature extends Feature {
-    public static final String OPEN_ACTION = "site_memo.open";
+/** Small local text notes (coordinates, build order, to-dos). Stored in config/celetweaks/notes.txt, never sent anywhere. */
+public final class TextNotesFeature extends Feature {
+    public static final String OPEN_ACTION = "text_notes.open";
     public static final int MAX_LINES = 64;
     public static final int MAX_LINE_LENGTH = 256;
 
-    public SiteMemoFeature() {
-        super(FeatureDefinition.SITE_MEMO);
+    public TextNotesFeature() {
+        super(FeatureDefinition.TEXT_NOTES);
     }
 
     @Override
     public void init() {
-        HotkeyManager.register(OPEN_ACTION, Component.translatable("celetweaks.hotkey.site_memo"), SiteMemoFeature::openIfEnabled);
+        HotkeyManager.register(OPEN_ACTION, Component.translatable("celetweaks.hotkey.text_notes"), TextNotesFeature::openIfEnabled);
     }
 
     public static void openIfEnabled() {
-        if (!CeleConfig.get().isEnabled(FeatureDefinition.SITE_MEMO)) return;
+        if (!CeleConfig.get().isEnabled(FeatureDefinition.TEXT_NOTES)) return;
         Minecraft client = Minecraft.getInstance();
-        client.execute(() -> CeleScreens.open(new SiteMemoScreen(io.github.bosatsu25.celetweaks.compat.Compat.currentScreen())));
+        client.execute(() -> CeleScreens.open(new TextNotesScreen(io.github.bosatsu25.celetweaks.compat.Compat.currentScreen())));
     }
 
     static Path file() {
-        return CeleConfig.get().directory().resolve("memo.txt");
+        return CeleConfig.get().directory().resolve("notes.txt");
     }
 
     static List<String> load() {
@@ -52,7 +52,7 @@ public final class SiteMemoFeature extends Feature {
                     lines.add(line.length() > MAX_LINE_LENGTH ? line.substring(0, MAX_LINE_LENGTH) : line);
                 }
             } catch (IOException | RuntimeException failure) {
-                CeleTweaksClient.LOGGER.warn("Could not read site memo", failure);
+                CeleTweaksClient.LOGGER.warn("Could not read text notes", failure);
             }
         }
         while (lines.size() < MAX_LINES) lines.add("");
@@ -66,11 +66,11 @@ public final class SiteMemoFeature extends Feature {
         Path path = file();
         try {
             Files.createDirectories(path.getParent());
-            Path temp = path.resolveSibling("memo.txt.tmp");
+            Path temp = path.resolveSibling("notes.txt.tmp");
             Files.writeString(temp, text, StandardCharsets.UTF_8);
             Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException failure) {
-            CeleTweaksClient.LOGGER.error("Could not save site memo", failure);
+            CeleTweaksClient.LOGGER.error("Could not save text notes", failure);
         }
     }
 }
