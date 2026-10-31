@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Downloads the newest Fabric build of every optional integration mod for one Minecraft version from
-# Modrinth into <dir>, for the integration game test. A mod with no build for that version is skipped
+# Downloads the newest Fabric release build (or, when a mod has none for that version, its newest
+# beta/alpha) of every optional integration mod for one Minecraft version from Modrinth into <dir>,
+# for the integration game test. A mod with no build for that version is skipped
 # and reported; its mixins are then simply not selected by IntegrationMixinPlugin.
 # Usage: fetch-integration-mods.sh <minecraft version> <dir>
 set -euo pipefail
@@ -16,27 +17,29 @@ summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 {
   echo "### Integration mods for Minecraft $MC"
   echo
-  echo "| Modrinth project | Version | File |"
-  echo "| --- | --- | --- |"
+  echo "| Modrinth project | Version | Type | File |"
+  echo "| --- | --- | --- | --- |"
 } >> "$summary"
 
 for slug in "${SLUGS[@]}"; do
   query="loaders=%5B%22fabric%22%5D&game_versions=%5B%22${MC}%22%5D"
   versions=$(curl -fsS --retry 3 -A "$UA" "$API/project/$slug/version?$query")
+  # Modrinth lists newest first; take the newest release, else the newest of any type.
   pick=$(printf '%s' "$versions" | jq -r '
     if length == 0 then empty else
-      .[0] as $v | ($v.files | (map(select(.primary)) + .)[0]) as $f
-      | [$v.version_number, $f.url, $f.filename] | @tsv
+      ((map(select(.version_type == "release")) + .)[0]) as $v
+      | ($v.files | (map(select(.primary)) + .)[0]) as $f
+      | [$v.version_number, $v.version_type, $f.url, $f.filename] | @tsv
     end')
   if [ -z "$pick" ]; then
     echo "$slug: no Fabric build for $MC, skipped"
-    echo "| $slug | — (none for $MC) | — |" >> "$summary"
+    echo "| $slug | — (none for $MC) | — | — |" >> "$summary"
     continue
   fi
-  IFS=$'\t' read -r version url filename <<< "$pick"
+  IFS=$'\t' read -r version type url filename <<< "$pick"
   curl -fsS --retry 3 -A "$UA" -o "$OUT/$filename" "$url"
-  echo "$slug: $version ($filename)"
-  echo "| $slug | $version | \`$filename\` |" >> "$summary"
+  echo "$slug: $version [$type] ($filename)"
+  echo "| $slug | $version | $type | \`$filename\` |" >> "$summary"
 done
 
 ls -la "$OUT"
