@@ -4,6 +4,7 @@ import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
 import io.github.bosatsu25.celetweaks.config.CeleConfig;
 import io.github.bosatsu25.celetweaks.feature.guard.ItemUseGuardFeature;
 import io.github.bosatsu25.celetweaks.feature.hotbar.HotbarLockFeature;
+import io.github.bosatsu25.celetweaks.gametest.mixin.MinecraftInvoker;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
@@ -23,7 +24,8 @@ import java.util.List;
 
 /**
  * Checks that the vanilla guards stop what they should and nothing else. Each case performs the action
- * through the client call that the player's input ends in (attack, use, pick block), once where the
+ * through the client call that the player's input ends in (attack, use, pick block), aimed explicitly
+ * rather than through the mouse and camera so the outcome does not depend on timing, once where the
  * guard applies and once as a control where it must not, and reads the outcome back from the server.
  * A control that fails means the test's own action did nothing, so a guard can never pass by accident.
  */
@@ -124,17 +126,17 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         for (int slot = 1; slot < 9; slot++) server.runCommand("item replace entity @p hotbar." + slot + " with minecraft:stick");
         context.runOnClient(client -> client.player.getInventory().setSelectedSlot(0));
         setLockedSlots(context, "1");
-        context.getInput().lookAt(site.ruleDirt());
         context.waitTicks(SETTLE);
 
-        context.getInput().pressKey(options -> options.keyPickItem);
+        pickBlock(context, site.ruleDirt());
         context.waitTicks(SETTLE);
-        check(hotbarItem(server, 0) == Items.DIAMOND, "Hotbar Lock: Pick Block overwrote the locked slot");
+        check(hotbarItem(server, 0) == Items.DIAMOND, "Hotbar Lock: Pick Block overwrote the locked slot; hotbar " + hotbar(server));
 
         setLockedSlots(context, "");
-        context.getInput().pressKey(options -> options.keyPickItem);
+        pickBlock(context, site.ruleDirt());
         context.waitTicks(SETTLE);
-        check(hotbarItem(server, 0) == Items.DIRT, "control: unlocked Pick Block did not replace the selected slot, so the pick did nothing");
+        check(hotbarItem(server, 0) == Items.DIRT,
+                "control: unlocked Pick Block did not replace the selected slot, so the pick did nothing; hotbar " + hotbar(server));
     }
 
     /** No Digging Underfoot: the block under a moving player survives; standing still, it breaks. */
@@ -165,6 +167,14 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         context.runOnClient(client -> client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, hit));
     }
 
+    /** What the Pick Block key ends in, with the crosshair set on {@code pos} for that one call. */
+    private static void pickBlock(ClientGameTestContext context, BlockPos pos) {
+        context.runOnClient(client -> {
+            client.hitResult = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+            ((MinecraftInvoker) client).celetweaks$pickBlockOrEntity();
+        });
+    }
+
     private static void setLockedSlots(ClientGameTestContext context, String slots) {
         context.runOnClient(client ->
                 CeleConfig.get().section(FeatureDefinition.HOTBAR_LOCK, HotbarLockFeature.Config.class).lockedSlots = slots);
@@ -176,6 +186,14 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
 
     private static Item hotbarItem(TestServerContext server, int slot) {
         return server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().getItem(slot).getItem());
+    }
+
+    private static List<Item> hotbar(TestServerContext server) {
+        return server.computeOnServer(s -> {
+            List<Item> items = new ArrayList<>();
+            for (int slot = 0; slot < 9; slot++) items.add(s.getPlayerList().getPlayers().getFirst().getInventory().getItem(slot).getItem());
+            return items;
+        });
     }
 
     private static void setblock(TestServerContext server, BlockPos pos, String block) {
