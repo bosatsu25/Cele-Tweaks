@@ -12,6 +12,9 @@
       "io.github.bosatsu25.celetweaks.gametest.CeleGuardGameTest"
     ]
   },
+  "mixins": [
+    "celetweaks-gametest.mixins.json"
+  ],
   "depends": {
     "celetweaks": "*",
     "fabric-client-gametest-api-v1": "*"
