@@ -1,6 +1,6 @@
 package io.github.bosatsu25.celetweaks.mixin;
 
-import io.github.bosatsu25.celetweaks.feature.quiet.QuietUiFeature;
+import io.github.bosatsu25.celetweaks.feature.grey.GreyColorsFeature;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +15,7 @@ public abstract class ChatComponentMixin {
             at = @At("HEAD"),
             argsOnly = true,
             ordinal = 0)
-    private Component celetweaks$quietChat(Component message) {
-        return QuietUiFeature.quietChat() ? QuietUiFeature.toGreyscale(message) : message;
+    private Component celetweaks$greyChat(Component message) {
+        return GreyColorsFeature.greyChat() ? GreyColorsFeature.toGreyscale(message) : message;
     }
 }

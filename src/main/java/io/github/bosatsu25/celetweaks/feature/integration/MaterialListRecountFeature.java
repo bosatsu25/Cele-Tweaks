@@ -10,16 +10,16 @@ import net.minecraft.network.chat.Component;
 import java.lang.reflect.Method;
 
 /** Hotkey that asks Litematica to recompute its material list. Reflection only; no Litematica compile dependency. */
-public final class MaterialListRefreshFeature extends Feature {
-    public static final String ACTION = "material_list.refresh";
+public final class MaterialListRecountFeature extends Feature {
+    public static final String ACTION = "material_list.recount";
 
-    public MaterialListRefreshFeature() {
-        super(FeatureDefinition.MATERIAL_LIST_REFRESH);
+    public MaterialListRecountFeature() {
+        super(FeatureDefinition.MATERIAL_LIST_RECOUNT);
     }
 
     @Override
     public void init() {
-        HotkeyManager.register(ACTION, Component.translatable("celetweaks.hotkey.material_list_refresh"), this::refresh);
+        HotkeyManager.register(ACTION, Component.translatable("celetweaks.hotkey.material_list_recount"), this::refresh);
     }
 
     private void refresh() {
@@ -32,10 +32,10 @@ public final class MaterialListRefreshFeature extends Feature {
             refresh.invoke(list);
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.sendOverlayMessage(Component.translatable("celetweaks.material_list.refreshed"));
+                client.player.sendOverlayMessage(Component.translatable("celetweaks.material_list.recounted"));
             }
         } catch (ReflectiveOperationException | LinkageError | RuntimeException failure) {
-            CeleTweaksClient.LOGGER.debug("Litematica material list refresh unavailable: {}", failure.toString());
+            CeleTweaksClient.LOGGER.debug("Litematica material list recount unavailable: {}", failure.toString());
         }
     }
 }

@@ -1,4 +1,4 @@
-package io.github.bosatsu25.celetweaks.feature.quiet;
+package io.github.bosatsu25.celetweaks.feature.grey;
 
 import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
 import io.github.bosatsu25.celetweaks.config.CeleConfig;
@@ -11,25 +11,25 @@ import net.minecraft.network.chat.TextColor;
 import java.util.Set;
 
 /**
- * Quiet UI shows every team in one neutral grey. Quiet Chat converts each chat colour to the grey of
+ * Grey Team Colors shows every team in one neutral grey. Grey Chat Colors converts each chat colour to the grey of
  * the same brightness, so emphasis survives while hue noise disappears; text, click and hover events
  * are untouched.
  */
-public final class QuietUiFeature implements RuntimeComponent {
+public final class GreyColorsFeature implements RuntimeComponent {
     @Override
-    public String id() { return "quiet"; }
+    public String id() { return "grey_colors"; }
 
     @Override
     public Set<FeatureDefinition> definitions() {
-        return Set.of(FeatureDefinition.QUIET_UI, FeatureDefinition.QUIET_CHAT);
+        return Set.of(FeatureDefinition.GREY_TEAMS, FeatureDefinition.GREY_CHAT);
     }
 
-    public static boolean neutralTeams() {
-        return CeleConfig.get().isEnabled(FeatureDefinition.QUIET_UI);
+    public static boolean greyTeams() {
+        return CeleConfig.get().isEnabled(FeatureDefinition.GREY_TEAMS);
     }
 
-    public static boolean quietChat() {
-        return CeleConfig.get().isEnabled(FeatureDefinition.QUIET_CHAT);
+    public static boolean greyChat() {
+        return CeleConfig.get().isEnabled(FeatureDefinition.GREY_CHAT);
     }
 
     /** Copies the component tree, replacing every colour with its luminance-equivalent grey. */

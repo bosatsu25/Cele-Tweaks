@@ -14,20 +14,20 @@ import net.minecraft.world.phys.AABB;
  * Protects the blocks the player is actually standing on while the player is moving across them.
  * Uses the player's real horizontal speed and bounding-box footprint, not key states.
  */
-public final class FootingGuardFeature extends Feature {
-    public FootingGuardFeature() {
-        super(FeatureDefinition.FOOTING_GUARD);
+public final class NoDigUnderfootFeature extends Feature {
+    public NoDigUnderfootFeature() {
+        super(FeatureDefinition.NO_DIG_UNDERFOOT);
     }
 
     @Override
     public void init() {
         AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
             if (!level.isClientSide() || !isEnabled()) return InteractionResult.PASS;
-            return isProtectedFooting(player, pos, config(Config.class)) ? InteractionResult.FAIL : InteractionResult.PASS;
+            return isUnderfoot(player, pos, config(Config.class)) ? InteractionResult.FAIL : InteractionResult.PASS;
         });
     }
 
-    static boolean isProtectedFooting(Player player, BlockPos pos, Config cfg) {
+    static boolean isUnderfoot(Player player, BlockPos pos, Config cfg) {
         if (!player.onGround()) return false;
         if (cfg.allowWhileSneaking && player.isShiftKeyDown()) return false;
         double min = cfg.minSpeedHundredths / 100.0;

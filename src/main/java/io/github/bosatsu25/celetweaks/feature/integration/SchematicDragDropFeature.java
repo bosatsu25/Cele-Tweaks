@@ -25,19 +25,19 @@ import java.util.Set;
  * (or the schematics root). Only regular, non-symlink files with a schematic extension and a bounded
  * size are accepted; existing files are never overwritten. Litematica is reached by reflection only.
  */
-public final class SchematicDropFeature extends Feature {
+public final class SchematicDragDropFeature extends Feature {
     private static final Set<String> EXTENSIONS = Set.of("litematic", "schem", "schematic", "nbt");
     private static final String BROWSER_BASE = "fi.dy.masa.litematica.gui.GuiSchematicBrowserBase";
 
-    public SchematicDropFeature() {
-        super(FeatureDefinition.SCHEMATIC_DROP);
+    public SchematicDragDropFeature() {
+        super(FeatureDefinition.SCHEMATIC_DRAG_DROP);
     }
 
     /** @return true when the drop was handled (the screen is a Litematica schematic browser). */
     public static boolean onFilesDrop(Screen screen, List<Path> paths) {
-        if (screen == null || paths == null || !CeleConfig.get().isEnabled(FeatureDefinition.SCHEMATIC_DROP)) return false;
+        if (screen == null || paths == null || !CeleConfig.get().isEnabled(FeatureDefinition.SCHEMATIC_DRAG_DROP)) return false;
         if (!isSchematicBrowser(screen)) return false;
-        Config cfg = CeleConfig.get().section(FeatureDefinition.SCHEMATIC_DROP, Config.class);
+        Config cfg = CeleConfig.get().section(FeatureDefinition.SCHEMATIC_DRAG_DROP, Config.class);
         long maxBytes = (long) Math.max(1, cfg.maxFileSizeMiB) * 1024 * 1024;
         Path base = schematicsBase();
         Path target = browserDirectory(screen, base);
@@ -51,13 +51,13 @@ public final class SchematicDropFeature extends Feature {
                 imported++;
             } catch (IOException | RuntimeException failure) {
                 rejected++;
-                CeleTweaksClient.LOGGER.warn("Schematic drop failed for {}", source.getFileName(), failure);
+                CeleTweaksClient.LOGGER.warn("Schematic drag & drop failed for {}", source.getFileName(), failure);
             }
         }
         refreshBrowser(screen);
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            client.player.sendOverlayMessage(Component.translatable("celetweaks.schematic_drop.result", imported, rejected));
+            client.player.sendOverlayMessage(Component.translatable("celetweaks.schematic_drag_drop.result", imported, rejected));
         }
         return true;
     }

@@ -10,24 +10,24 @@ import net.minecraft.network.chat.Component;
 import java.lang.reflect.Field;
 
 /** Blocks the Syncmatica "remove shared placement" button, or requires Shift for it. */
-public final class SharedPlanLockFeature extends Feature {
+public final class SyncmaticaRemoveLockFeature extends Feature {
     public enum Mode { DISABLE_REMOVE, REQUIRE_SHIFT }
 
     private static boolean warned;
 
-    public SharedPlanLockFeature() {
-        super(FeatureDefinition.SHARED_PLAN_LOCK);
+    public SyncmaticaRemoveLockFeature() {
+        super(FeatureDefinition.SYNCMATICA_REMOVE_LOCK);
     }
 
     /** @param listener Syncmatica's button listener; its enum field tells which button was pressed. */
     public static boolean shouldBlock(Object listener) {
-        if (!CeleConfig.get().isEnabled(FeatureDefinition.SHARED_PLAN_LOCK) || !isRemove(listener)) return false;
-        Mode mode = CeleConfig.get().section(FeatureDefinition.SHARED_PLAN_LOCK, Config.class).mode;
+        if (!CeleConfig.get().isEnabled(FeatureDefinition.SYNCMATICA_REMOVE_LOCK) || !isRemove(listener)) return false;
+        Mode mode = CeleConfig.get().section(FeatureDefinition.SYNCMATICA_REMOVE_LOCK, Config.class).mode;
         Minecraft client = Minecraft.getInstance();
         boolean block = mode != Mode.REQUIRE_SHIFT || !client.hasShiftDown();
         if (block && client.player != null) {
             client.player.sendOverlayMessage(Component.translatable(
-                    mode == Mode.REQUIRE_SHIFT ? "celetweaks.shared_plan_lock.shift" : "celetweaks.shared_plan_lock.blocked"));
+                    mode == Mode.REQUIRE_SHIFT ? "celetweaks.syncmatica_remove_lock.shift" : "celetweaks.syncmatica_remove_lock.blocked"));
         }
         return block;
     }
@@ -48,7 +48,7 @@ public final class SharedPlanLockFeature extends Feature {
         }
         if (!warned) {
             warned = true;
-            CeleTweaksClient.LOGGER.warn("Shared Plan Lock could not identify Syncmatica's button type; it will not block anything");
+            CeleTweaksClient.LOGGER.warn("Syncmatica Remove Lock could not identify Syncmatica's button type; it will not block anything");
         }
         return false;
     }

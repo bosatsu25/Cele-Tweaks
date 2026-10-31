@@ -17,7 +17,7 @@ import java.util.List;
 /** Screen 1 of 3: category tabs × feature rows (toggle / hotkey / details). */
 public final class FeatureListScreen extends Screen {
     private final Screen parent;
-    private FeatureCategory category = FeatureCategory.SAFETY;
+    private FeatureCategory category = FeatureCategory.GUARD;
     private int page;
     private final List<Component> hoverLines = new ArrayList<>();
 

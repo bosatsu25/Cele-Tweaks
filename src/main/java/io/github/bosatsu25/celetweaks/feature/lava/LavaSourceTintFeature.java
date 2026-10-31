@@ -13,7 +13,7 @@ import net.minecraft.world.level.material.Fluids;
  * vertex colours in the vanilla fluid mesher (FluidRenderer). Sodium replaces that mesher, so the
  * effect does not show while Sodium is installed.
  */
-public final class LavaHighlightFeature extends Feature {
+public final class LavaSourceTintFeature extends Feature {
     /** Fluid being meshed on this (chunk-builder) thread; set by the FluidRenderer mixin. */
     private static final ThreadLocal<FluidState> CURRENT = new ThreadLocal<>();
 
@@ -21,8 +21,8 @@ public final class LavaHighlightFeature extends Feature {
     private static volatile int sourceTint;
     private static volatile int flowingBrightness;
 
-    public LavaHighlightFeature() {
-        super(FeatureDefinition.LAVA_HIGHLIGHT);
+    public LavaSourceTintFeature() {
+        super(FeatureDefinition.LAVA_SOURCE_TINT);
     }
 
     @Override

@@ -115,7 +115,7 @@ io.github.bosatsu25.celetweaks
 | --- | --- |
 | `config/celetweaks/features.json` | `enabled`（機能 ID → ON/OFF）と `sections`（機能 ID → 設定オブジェクト） |
 | `config/celetweaks/hotkeys.json` | アクション ID → キー名の配列（`key.keyboard.k` 形式） |
-| `config/celetweaks/memo.txt` | 現場メモ本文 |
+| `config/celetweaks/notes.txt` | テキストノートの本文 |
 
 - 欠けたフィールドは既定値、未知のフィールドは保持、壊れたファイルは `.broken-<時刻>` に退避して既定値で起動、書き込みは一時ファイルからの置き換え。
 - 設定画面は各機能の設定クラスの public フィールドから自動生成（boolean / int / double / float / String / enum / `List<String>`）。`@Range` で数値の上下限を付ける。
@@ -163,4 +163,4 @@ io.github.bosatsu25.celetweaks
 
 1. 各機能が意図どおりに働くか。client game test が確かめるのは、起動・Mixin の適用・画面の表示・ワールド内で例外が出ないことまでで、ガードが本当に操作を止めるか、描画の見た目が正しいかは判定しない。
 2. Tweakeroo / TweakerMore / Litematica / Syncmatica の 26.2 / 26.3 ビルドでのクラス名・メソッド名。違っていれば該当連携は no-op になる（クラッシュはしない）。[推測]
-3. Sodium 導入時、溶岩ハイライトは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]
+3. Sodium 導入時、溶岩源の色付けは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]

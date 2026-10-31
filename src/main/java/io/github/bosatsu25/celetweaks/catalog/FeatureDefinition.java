@@ -11,35 +11,35 @@ import java.util.Objects;
  */
 public enum FeatureDefinition {
     // --- Core: validates the HUD / mixin pipeline on every version ---------------------------
-    SCOREBOARD_PANEL("scoreboard_panel", FeatureCategory.FOCUS, RiskKind.VISUAL, Tier.CORE, true),
-    QUIET_UI("quiet_ui", FeatureCategory.FOCUS, RiskKind.VISUAL, Tier.CORE, true),
+    SIDEBAR_LAYOUT("sidebar_layout", FeatureCategory.HUD, RiskKind.VISUAL, Tier.CORE, true),
+    GREY_TEAMS("grey_teams", FeatureCategory.HUD, RiskKind.VISUAL, Tier.CORE, true),
 
     // --- Vanilla only ------------------------------------------------------------------------
-    QUIET_CHAT("quiet_chat", FeatureCategory.FOCUS, RiskKind.VISUAL, Tier.VANILLA, true),
-    PORTAL_BREAK_GUARD("portal_break_guard", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.VANILLA, true),
-    PORTAL_PLACEMENT_GUARD("portal_placement_guard", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.VANILLA, true),
-    FOOTING_GUARD("footing_guard", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.VANILLA, true),
-    ITEM_USE_GUARD("item_use_guard", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.VANILLA, true),
-    HOTBAR_LOCK("hotbar_lock", FeatureCategory.INVENTORY, RiskKind.GUARD, Tier.VANILLA, true),
-    PRECISION_AIM("precision_aim", FeatureCategory.BUILDING, RiskKind.VISUAL, Tier.VANILLA, true),
-    SITE_MEMO("site_memo", FeatureCategory.BUILDING, RiskKind.VISUAL, Tier.VANILLA, true),
-    ACTION_LOG("action_log", FeatureCategory.BUILDING, RiskKind.VISUAL, Tier.VANILLA, true),
-    RANGE_OVERLAY("range_overlay", FeatureCategory.BUILDING, RiskKind.VISUAL, Tier.VANILLA, true),
-    ENTITY_FILTER("entity_filter", FeatureCategory.RENDERING, RiskKind.VISUAL, Tier.VANILLA, true),
-    BLOCK_FILTER("block_filter", FeatureCategory.RENDERING, RiskKind.VISUAL, Tier.VANILLA, true),
-    LAVA_HIGHLIGHT("lava_highlight", FeatureCategory.RENDERING, RiskKind.VISUAL, Tier.VANILLA, true),
+    GREY_CHAT("grey_chat", FeatureCategory.HUD, RiskKind.VISUAL, Tier.VANILLA, true),
+    PORTAL_FRAME_PROTECT("portal_frame_protect", FeatureCategory.GUARD, RiskKind.GUARD, Tier.VANILLA, true),
+    PORTAL_DOORWAY_CLEAR("portal_doorway_clear", FeatureCategory.GUARD, RiskKind.GUARD, Tier.VANILLA, true),
+    NO_DIG_UNDERFOOT("no_dig_underfoot", FeatureCategory.GUARD, RiskKind.GUARD, Tier.VANILLA, true),
+    ITEM_USE_GUARD("item_use_guard", FeatureCategory.GUARD, RiskKind.GUARD, Tier.VANILLA, true),
+    HOTBAR_LOCK("hotbar_lock", FeatureCategory.GUARD, RiskKind.GUARD, Tier.VANILLA, true),
+    SLOW_LOOK("slow_look", FeatureCategory.UTILITY, RiskKind.VISUAL, Tier.VANILLA, true),
+    TEXT_NOTES("text_notes", FeatureCategory.UTILITY, RiskKind.VISUAL, Tier.VANILLA, true),
+    ACTION_LOG("action_log", FeatureCategory.UTILITY, RiskKind.VISUAL, Tier.VANILLA, true),
+    RANGE_OVERLAY("range_overlay", FeatureCategory.VIEW, RiskKind.VISUAL, Tier.VANILLA, true),
+    ENTITY_FILTER("entity_filter", FeatureCategory.VIEW, RiskKind.VISUAL, Tier.VANILLA, true),
+    BLOCK_FILTER("block_filter", FeatureCategory.VIEW, RiskKind.VISUAL, Tier.VANILLA, true),
+    LAVA_SOURCE_TINT("lava_source_tint", FeatureCategory.VIEW, RiskKind.VISUAL, Tier.VANILLA, true),
 
     // --- Optional external mods (no-op when absent) -----------------------------------------
-    CRAFT_BURST_GUARD("craft_burst_guard", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.ITEMSCROLLER),
-    SHARED_PLAN_LOCK("shared_plan_lock", FeatureCategory.SAFETY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.SYNCMATICA),
-    TOOL_SWITCH_SCOPE("tool_switch_scope", FeatureCategory.COMPATIBILITY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.TWEAKEROO),
-    TWEAKEROO_RESYNC("tweakeroo_resync", FeatureCategory.COMPATIBILITY, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.TWEAKEROO),
-    AUTO_PICK_SCOPE("auto_pick_scope", FeatureCategory.COMPATIBILITY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.TWEAKERMORE),
-    SYNCER_TUNE("syncer_tune", FeatureCategory.COMPATIBILITY, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.TWEAKERMORE),
-    PLACEMENT_CONVERSIONS("placement_conversions", FeatureCategory.COMPATIBILITY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA, Mods.TWEAKERMORE),
-    MATERIAL_SUBSTITUTION("material_substitution", FeatureCategory.COMPATIBILITY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA),
-    MATERIAL_LIST_REFRESH("material_list_refresh", FeatureCategory.COMPATIBILITY, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.LITEMATICA),
-    SCHEMATIC_DROP("schematic_drop", FeatureCategory.COMPATIBILITY, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA);
+    SHIFT_TO_MASS_CRAFT("shift_to_mass_craft", FeatureCategory.GUARD, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.ITEMSCROLLER),
+    SYNCMATICA_REMOVE_LOCK("syncmatica_remove_lock", FeatureCategory.GUARD, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.SYNCMATICA),
+    TOOL_SWITCH_SCOPE("tool_switch_scope", FeatureCategory.MOD_LINK, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.TWEAKEROO),
+    TWEAKEROO_RESYNC("tweakeroo_resync", FeatureCategory.MOD_LINK, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.TWEAKEROO),
+    AUTO_PICK_SCOPE("auto_pick_scope", FeatureCategory.MOD_LINK, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.TWEAKERMORE),
+    SYNCER_TUNE("syncer_tune", FeatureCategory.MOD_LINK, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.TWEAKERMORE),
+    PLACEMENT_CONVERSIONS("placement_conversions", FeatureCategory.MOD_LINK, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA, Mods.TWEAKERMORE),
+    MATERIAL_SUBSTITUTION("material_substitution", FeatureCategory.MOD_LINK, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA),
+    MATERIAL_LIST_RECOUNT("material_list_recount", FeatureCategory.MOD_LINK, RiskKind.VISUAL, Tier.INTEGRATION, true, Mods.LITEMATICA),
+    SCHEMATIC_DRAG_DROP("schematic_drag_drop", FeatureCategory.MOD_LINK, RiskKind.GUARD, Tier.INTEGRATION, true, Mods.LITEMATICA);
 
     public static final List<FeatureDefinition> VALUES = List.of(values());
 

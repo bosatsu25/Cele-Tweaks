@@ -27,32 +27,32 @@ import java.util.Set;
  *       cells an entity walks through.</li>
  * </ul>
  */
-public final class PortalGuardFeature implements RuntimeComponent {
+public final class PortalProtectionFeature implements RuntimeComponent {
     @Override
     public String id() { return "portal_guard"; }
 
     @Override
     public Set<FeatureDefinition> definitions() {
-        return Set.of(FeatureDefinition.PORTAL_BREAK_GUARD, FeatureDefinition.PORTAL_PLACEMENT_GUARD);
+        return Set.of(FeatureDefinition.PORTAL_FRAME_PROTECT, FeatureDefinition.PORTAL_DOORWAY_CLEAR);
     }
 
     @Override
     public void init() {
         AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
-            if (!level.isClientSide() || !CeleConfig.get().isEnabled(FeatureDefinition.PORTAL_BREAK_GUARD)) return InteractionResult.PASS;
+            if (!level.isClientSide() || !CeleConfig.get().isEnabled(FeatureDefinition.PORTAL_FRAME_PROTECT)) return InteractionResult.PASS;
             if (isFrameOfActivePortal(level, pos)) {
-                warn(player, "celetweaks.portal_guard.frame");
+                warn(player, "celetweaks.portal.frame");
                 return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
         });
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
-            if (!level.isClientSide() || !CeleConfig.get().isEnabled(FeatureDefinition.PORTAL_PLACEMENT_GUARD)) return InteractionResult.PASS;
+            if (!level.isClientSide() || !CeleConfig.get().isEnabled(FeatureDefinition.PORTAL_DOORWAY_CLEAR)) return InteractionResult.PASS;
             if (!(player.getItemInHand(hand).getItem() instanceof BlockItem)) return InteractionResult.PASS;
             BlockPos clicked = hit.getBlockPos();
             BlockPos target = level.getBlockState(clicked).canBeReplaced() ? clicked : clicked.relative(hit.getDirection());
             if (blocksPortalFace(level, target)) {
-                warn(player, "celetweaks.portal_guard.face");
+                warn(player, "celetweaks.portal.face");
                 return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
