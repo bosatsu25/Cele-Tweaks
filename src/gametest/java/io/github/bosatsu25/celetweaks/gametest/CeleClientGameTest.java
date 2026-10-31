@@ -1,30 +1,32 @@
 package io.github.bosatsu25.celetweaks.gametest;
 
 import io.github.bosatsu25.celetweaks.catalog.FeatureDefinition;
-import io.github.bosatsu25.celetweaks.catalog.Tier;
 import io.github.bosatsu25.celetweaks.compat.Compat;
 import io.github.bosatsu25.celetweaks.config.CeleConfig;
 import io.github.bosatsu25.celetweaks.gui.FeatureListScreen;
 import io.github.bosatsu25.celetweaks.gui.FeatureSettingsScreen;
+import io.github.bosatsu25.celetweaks.mixin.integration.IntegrationMixinPlugin;
 import io.github.bosatsu25.celetweaks.runtime.FeatureManager;
 import io.github.bosatsu25.celetweaks.runtime.SafeStartup;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.gui.screens.Screen;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Launch check run by CI on every version. The real client starts with the mod, every settings
- * screen opens, and a singleplayer world is played with every vanilla feature switched on.
+ * screen opens, and a singleplayer world is played with every available feature switched on.
  * Required mixins crash the game when their target is wrong, so reaching the end means they all
- * applied; any startup failure or quarantined feature fails the test.
+ * applied; any startup failure or quarantined feature fails the test. When CI's integration job adds
+ * the external mods, every integration mixin must also have hooked into its target.
  */
 public final class CeleClientGameTest implements FabricClientGameTest {
-    private static final List<FeatureDefinition> VANILLA = FeatureDefinition.VALUES.stream()
-            .filter(definition -> definition.tier() != Tier.INTEGRATION)
-            .toList();
+    private static final Logger LOGGER = LoggerFactory.getLogger("celetweaks-gametest");
 
     /** Puts something on screen for each world-facing feature, next to the player. */
     private static final List<String> SCENE = List.of(
@@ -49,7 +51,9 @@ public final class CeleClientGameTest implements FabricClientGameTest {
         check(startupFailures.isEmpty(), "startup stages failed: " + startupFailures);
 
         Screen title = context.computeOnClient(client -> Compat.currentScreen());
-        context.runOnClient(client -> VANILLA.forEach(definition -> CeleConfig.get().setEnabled(definition, true)));
+        List<FeatureDefinition> available = FeatureDefinition.VALUES.stream().filter(FeatureDefinition::isAvailable).toList();
+        LOGGER.info("Switching on {} available feature(s): {}", available.size(), available);
+        context.runOnClient(client -> available.forEach(definition -> CeleConfig.get().setEnabled(definition, true)));
 
         context.setScreen(() -> new FeatureListScreen(title));
         context.waitTicks(2);
@@ -76,6 +80,25 @@ public final class CeleClientGameTest implements FabricClientGameTest {
             context.takeScreenshot("celetweaks-world");
             checkNothingQuarantined(context, "singleplayer world");
         }
+        checkIntegrationHooks();
+    }
+
+    /** With external mods installed, each selected integration mixin must have woven at least one call. */
+    private static void checkIntegrationHooks() {
+        Map<String, String> selected = IntegrationMixinPlugin.selected();
+        if (selected.isEmpty()) return;
+        for (String target : selected.values()) {
+            try {
+                // Loading the class (without initialising it) is what weaves the mixin into it.
+                Class.forName(target, false, CeleClientGameTest.class.getClassLoader());
+            } catch (ClassNotFoundException missing) {
+                throw new AssertionError("integration target class is gone: " + target, missing);
+            }
+        }
+        Map<String, Integer> hooks = IntegrationMixinPlugin.hooks();
+        LOGGER.info("Integration hooks (mixin -> call sites): {}", hooks);
+        List<String> idle = selected.keySet().stream().filter(mixin -> hooks.getOrDefault(mixin, 0) == 0).sorted().toList();
+        check(idle.isEmpty(), "integration mixins that hooked nothing: " + idle + " (targets " + selected + ")");
     }
 
     private static void checkNothingQuarantined(ClientGameTestContext context, String stage) {

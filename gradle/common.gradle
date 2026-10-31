@@ -50,6 +50,15 @@ sourceSets {
     }
 }
 
+// CI's integration job passes -Pintegration_mods=<dir> holding the optional mods' jars, so the game
+// test runs with them installed. They are never a compile dependency.
+def integrationMods = findProperty('integration_mods')
+if (integrationMods) {
+    dependencies {
+        gametestRuntimeOnly fileTree(dir: integrationMods.toString(), include: '*.jar')
+    }
+}
+
 // Groups main's classes and resources into one mod for dev runs; the game test mod gets its own group.
 loom {
     mods {

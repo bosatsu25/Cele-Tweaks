@@ -79,10 +79,11 @@ Mixin のターゲット名は javac では検証されない（間違ってい�
 - PR と main への push で、3 版をマトリクスで並列ビルド（`./gradlew :<mc>:build -Pmc=<mc>`）。
 - 毎回、Maven リポジトリの最新版一覧と、各版の API 署名ダンプをログに出す。
 - 続けて client game test を仮想ディスプレイ上で実行（`./gradlew :<mc>:runClientGameTest -Pmc=<mc>`）。次の順に進み、クラッシュ・起動段の失敗・隔離が 1 件でもあれば失敗。スクリーンショットとログは成果物として 7 日間保存。
-  1. バニラ機能（Core / Vanilla）をすべて ON にする。
+  1. 使える機能をすべて ON にする（通常のジョブでは Core / Vanilla、integration ジョブでは連携機能も）。
   2. 機能一覧画面と、全 25 機能の設定画面を開く。
   3. シングルプレイのワールドに入り、サイドバーの目標・色付きチーム・色付きチャット・溶岩・ビーコン・避雷針を用意する。
   4. ワールド内で Block Filter を OFF→ON してチャンク再描画の経路を通す。
+- 別ジョブ `integration (mc <版>)` で、Litematica / Tweakeroo / TweakerMore / Syncmatica / Item Scroller / MaLiLib の各版向け最新ビルドを Modrinth から取得し（`.github/scripts/fetch-integration-mods.sh`）、同じ client game test を `-Pintegration_mods=<dir>` 付きで実行する。連携機能も ON になり、さらに連携用 Mixin がすべて相手のメソッドに 1 か所以上フックしたことを確かめる。取得できた版はジョブの Summary に表で出る。
 - タグ `v*` を push すると、`release.yml` がまず CI 全体（3 版のビルドと client game test）を `workflow_call` で実行する。失敗すればリリースしない。成功したら、CI がビルドして起動テストに使った JAR そのもの（再ビルドしない）を 1 つの GitHub Release に添付する。
 - `release.yml` を手動実行（workflow_dispatch）すると、同じ確認と JAR の収集までを行い、Release は作らない（リハーサル）。
 - バージョン表記は `MAJOR.MINOR.PATCH+mc<MC>`（例 `0.1.0+mc26.3`）。
@@ -135,6 +136,8 @@ io.github.bosatsu25.celetweaks
 
 外部 MOD はコンパイル依存に入れない。型が必要な箇所はリフレクションで扱い、`ReflectiveOperationException` と `LinkageError` は境界内で握る。
 
+`IntegrationMixinPlugin` は、連携用 Mixin を適用するたびに、相手のクラスへ織り込まれたハンドラ呼び出しの数を数える。0 件なら「この版の相手 MOD では機能が働かない」と警告ログを出す（`require = 0` のままでも黙って無効にならない）。CI の integration ジョブはこの数を検査する。
+
 ---
 
 ## 6. 機能
@@ -163,5 +166,5 @@ io.github.bosatsu25.celetweaks
 ## 8. 未確認事項
 
 1. 各機能が意図どおりに働くか。client game test が確かめるのは、起動・Mixin の適用・画面の表示・ワールド内で例外が出ないことまでで、ガードが本当に操作を止めるか、描画の見た目が正しいかは判定しない。
-2. Tweakeroo / TweakerMore / Litematica / Syncmatica の 26.2 / 26.3 ビルドでのクラス名・メソッド名。違っていれば該当連携は no-op になる（クラッシュはしない）。[推測]
+2. 外部 MOD 連携の接続先は、各 MOD の 26.1.2 / 26.2 / 26.3 向けソースで実在を確認済み（[FEATURE_CATALOG.md](FEATURE_CATALOG.md) 末尾の表）。[確実] 実際に配布されている JAR へのフックは CI の integration ジョブで確かめる。連携機能が意図どおりに働くか（判定の中身）は未確認。
 3. Sodium 導入時、溶岩源の色付けは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]
