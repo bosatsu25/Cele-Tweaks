@@ -60,12 +60,16 @@ Cele-Tweaks の全 25 機能の仕様です。すべて既定 OFF。
 
 ## 連携先の確認状況
 
-連携先のクラス・メソッドは、各 MOD の 26.1.2 / 26.2 / 26.3 向けソースで実在を確認済み（2026-10-31 時点）。
+- 連携先のクラス・メソッドは、各 MOD の 26.1.2 / 26.2 / 26.3 向けソースで実在を確認済み。
+- CI の `integration` ジョブは、Modrinth の最新 Fabric ビルドを入れて起動し、連携用 Mixin 8 個すべてが相手のメソッドにフックしたことを毎回確かめる。下の表は 2026-10-31 に通った版。
 
 | MOD | 26.1.2 | 26.2 | 26.3 | 接続先 |
 | --- | --- | --- | --- | --- |
-| Tweakeroo（sakura-ryoko） | 0.28.11 | 0.29.6 | 0.30.2 | `InventoryUtils.trySwitchToEffectiveTool(BlockPos)`、`FeatureToggle` |
-| Litematica（sakura-ryoko） | 0.27.14 | 0.28.8 | 0.29.2 | `MaterialCache.getRequiredBuildItemForState*`、`DataManager`、`MaterialListBase.refreshPreFilteredList()`、`GuiSchematicBrowserBase` |
-| Item Scroller（sakura-ryoko） | 0.31.6 | 0.32.2 | 0.33.1 | `KeybindCallbacks.onClientTickMassCraftImpl(Minecraft)` |
-| TweakerMore（Fallen-Breath） | 対応 | 対応 | 対応 | `PlacementRestrictor` / `LooseCaseChecker` / `BlockInteractionRestrictor` / `SchematicBlockPicker`、`TweakerMoreConfigs.SERVER_DATA_SYNCER_QUERY_*` |
-| Syncmatica（sakura-ryoko フォーク） | 0.3.20 | 0.3.20 | 0.3.20 | `WidgetSyncmaticaServerPlacementEntry$ButtonListener.actionPerformedWithButton` |
+| MaLiLib | 0.28.12 | 0.29.6 | 0.30.2 | （下の MOD の前提） |
+| Tweakeroo | 0.28.10 | 0.29.5 | 0.30.1 | `InventoryUtils.trySwitchToEffectiveTool(BlockPos)`、`FeatureToggle` |
+| Litematica | 0.27.14 | 0.28.8 | 0.29.1 | `MaterialCache.getRequiredBuildItemForState*`、`DataManager`、`MaterialListBase.refreshPreFilteredList()`、`GuiSchematicBrowserBase` |
+| Item Scroller | 0.31.6 | 0.32.2 | 0.33.1 | `KeybindCallbacks.onClientTickMassCraftImpl(Minecraft)` |
+| TweakerMore | 3.33.2 | 3.33.2 | 3.33.3-beta.1 | `PlacementRestrictor` / `LooseCaseChecker` / `BlockInteractionRestrictor` / `SchematicBlockPicker`、`TweakerMoreConfigs.SERVER_DATA_SYNCER_QUERY_*` |
+| Syncmatica | 0.3.20 | 0.3.20 | 0.3.20 | `WidgetSyncmaticaServerPlacementEntry$ButtonListener.actionPerformedWithButton` |
+
+フックしたことまでは CI で分かるが、連携機能の判定の中身（何を止め、何を通すか）が意図どおりかは、実際に遊んで確かめる必要がある。
