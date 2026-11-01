@@ -80,9 +80,11 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
     /** TweakerMore's placement restriction accepts a stand-in and an axe stripping only with the rules. */
     private static void placementConversions(ClientGameTestContext context) {
         String pkg = "me.fallenbreath.tweakermore.impl.features.schematicProPlace.restrict.";
-        Method blockCorrect = method(pkg + "PlacementRestrictor", "isBlockToPlaceCorrect", BlockState.class, BlockState.class);
-        Method itemLoose = method(pkg + "LooseCaseChecker", "isLooseCheckSpecialCase", BlockState.class, ItemStack.class, ItemStack.class);
-        Method interact = method(pkg + "BlockInteractionRestrictor", "checkInteract", Player.class, BlockState.class, BlockState.class);
+        Method blockCorrect = context.computeOnClient(client -> method(pkg + "PlacementRestrictor", "isBlockToPlaceCorrect", BlockState.class, BlockState.class));
+        Method itemLoose = context.computeOnClient(client ->
+                method(pkg + "LooseCaseChecker", "isLooseCheckSpecialCase", BlockState.class, ItemStack.class, ItemStack.class));
+        Method interact = context.computeOnClient(client ->
+                method(pkg + "BlockInteractionRestrictor", "checkInteract", Player.class, BlockState.class, BlockState.class));
         BlockState stone = Blocks.STONE.defaultBlockState();
         BlockState cobblestone = Blocks.COBBLESTONE.defaultBlockState();
 
@@ -107,8 +109,9 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
 
     /** Litematica asks for a dead coral block; with only the live one carried, that is what it gets. */
     private static void materialSubstitution(ClientGameTestContext context) {
-        Method required = method("fi.dy.masa.litematica.materials.MaterialCache", "getRequiredBuildItemForState", BlockState.class);
-        Object cache = reflect(() -> Class.forName("fi.dy.masa.litematica.materials.MaterialCache").getMethod("getInstance").invoke(null));
+        Method required = context.computeOnClient(client -> method("fi.dy.masa.litematica.materials.MaterialCache", "getRequiredBuildItemForState", BlockState.class));
+        Object cache = context.computeOnClient(client ->
+                reflect(() -> Class.forName("fi.dy.masa.litematica.materials.MaterialCache").getMethod("getInstance").invoke(null)));
         BlockState dead = Blocks.DEAD_TUBE_CORAL_BLOCK.defaultBlockState();
 
         Item withNothing = context.computeOnClient(client -> {
@@ -136,7 +139,9 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
             Files.writeString(text, "must be refused");
             return null;
         });
-        Path base = reflect(() -> (Path) Class.forName("fi.dy.masa.litematica.data.DataManager").getMethod("getSchematicsBaseDirectory").invoke(null));
+        // Litematica resolves the folder through Minecraft.getInstance(), which only the client thread may call.
+        Path base = context.computeOnClient(client ->
+                reflect(() -> (Path) Class.forName("fi.dy.masa.litematica.data.DataManager").getMethod("getSchematicsBaseDirectory").invoke(null)));
 
         // The save browser: Litematica 26.3 imports drops itself on its load and manager screens, but not here.
         Screen before = context.computeOnClient(client -> Compat.currentScreen());
@@ -164,8 +169,10 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
             cfg.enterThreshold = 4;
             cfg.exitThreshold = 2;
         });
-        Object interval = reflect(() -> Class.forName("me.fallenbreath.tweakermore.config.TweakerMoreConfigs").getField("SERVER_DATA_SYNCER_QUERY_INTERVAL").get(null));
-        Object limit = reflect(() -> Class.forName("me.fallenbreath.tweakermore.config.TweakerMoreConfigs").getField("SERVER_DATA_SYNCER_QUERY_LIMIT").get(null));
+        Object interval = context.computeOnClient(client -> reflect(() ->
+                Class.forName("me.fallenbreath.tweakermore.config.TweakerMoreConfigs").getField("SERVER_DATA_SYNCER_QUERY_INTERVAL").get(null)));
+        Object limit = context.computeOnClient(client -> reflect(() ->
+                Class.forName("me.fallenbreath.tweakermore.config.TweakerMoreConfigs").getField("SERVER_DATA_SYNCER_QUERY_LIMIT").get(null)));
         int ownInterval = intValue(context, interval);
         int ownLimit = intValue(context, limit);
         check(ownInterval != 3 || ownLimit != 128, "setup: TweakerMore's own syncer values already equal the relaxed ones");
@@ -185,8 +192,8 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
 
     /** TweakerMore's schematic pick does not run while the selected hotbar slot is locked. */
     private static void autoPickScope(ClientGameTestContext context, BlockPos p) {
-        Method pick = method("me.fallenbreath.tweakermore.impl.features.schematicProPlace.SchematicBlockPicker", "doSchematicWorldPickBlock",
-                net.minecraft.client.Minecraft.class, BlockPos.class, InteractionHand.class);
+        Method pick = context.computeOnClient(client -> method("me.fallenbreath.tweakermore.impl.features.schematicProPlace.SchematicBlockPicker",
+                "doSchematicWorldPickBlock", net.minecraft.client.Minecraft.class, BlockPos.class, InteractionHand.class));
         context.runOnClient(client -> client.player.getInventory().setSelectedSlot(0));
 
         setLockedSlots(context, "1");
@@ -212,7 +219,7 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
             cfg.keepInHand = new ArrayList<>();
         });
         context.waitTicks(SETTLE);
-        Method trySwitch = method("fi.dy.masa.tweakeroo.util.InventoryUtils", "trySwitchToEffectiveTool", BlockPos.class);
+        Method trySwitch = context.computeOnClient(client -> method("fi.dy.masa.tweakeroo.util.InventoryUtils", "trySwitchToEffectiveTool", BlockPos.class));
 
         int before = Spies.TOOL_SWITCH.get();
         context.runOnClient(client -> invoke(trySwitch, null, stone));
@@ -226,7 +233,8 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
         server.runCommand("gamemode survival @a"); // the creative inventory replaces the player inventory screen
         context.waitTicks(SETTLE);
         Screen before = context.computeOnClient(client -> Compat.currentScreen());
-        context.setScreen(() -> new InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
+        Player player = context.computeOnClient(client -> client.player);
+        context.setScreen(() -> new InventoryScreen(player));
         context.waitTicks(5);
 
         int start = Spies.MASS_CRAFT.get();
@@ -262,14 +270,14 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
     }
 
     private static int intValue(ClientGameTestContext context, Object option) {
-        Method getter = reflect(() -> option.getClass().getMethod("getIntegerValue"));
-        return context.computeOnClient(client -> (int) invoke(getter, option));
+        return context.computeOnClient(client -> (int) invoke(reflect(() -> option.getClass().getMethod("getIntegerValue")), option));
     }
 
     private static Object call(ClientGameTestContext context, Method method, Object... args) {
         return context.computeOnClient(client -> invoke(method, null, args));
     }
 
+    /** Call on the client thread: loading a mod class can run code that needs Minecraft.getInstance(). */
     private static Method method(String owner, String name, Class<?>... parameters) {
         return reflect(() -> {
             Method method = Class.forName(owner).getDeclaredMethod(name, parameters);
