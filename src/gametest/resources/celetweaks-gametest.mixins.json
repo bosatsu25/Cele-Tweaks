@@ -4,6 +4,9 @@
   "package": "io.github.bosatsu25.celetweaks.gametest.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "MinecraftInvoker"
+    "MinecraftInvoker",
+    "ItemScrollerMassCraftSpy",
+    "TweakerooToolSwitchSpy",
+    "TweakerMoreSchematicPickSpy"
   ]
 }
