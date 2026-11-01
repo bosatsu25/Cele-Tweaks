@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
@@ -33,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -45,6 +47,8 @@ import java.util.stream.Stream;
 public final class CeleIntegrationGameTest implements FabricClientGameTest {
     private static final Logger LOGGER = LoggerFactory.getLogger("celetweaks-gametest");
     private static final int SETTLE = 10;
+    /** Ticks {@link #eventually} waits for a change to show on the client before the case fails. */
+    private static final int TIMEOUT = 100;
 
     @Override
     public void runTest(ClientGameTestContext context) {
@@ -177,16 +181,15 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
         int ownLimit = intValue(context, limit);
         check(ownInterval != 3 || ownLimit != 128, "setup: TweakerMore's own syncer values already equal the relaxed ones");
 
+        // The feature counts block entities in the client's world, which follows the server some ticks later.
         BlockPos from = p.offset(2, 0, 2);
         BlockPos to = from.offset(5, 0, 0);
         server.runCommand("fill " + xyz(from) + " " + xyz(to) + " minecraft:chest");
-        context.waitTicks(30);
-        check(intValue(context, interval) == 3 && intValue(context, limit) == 128,
+        check(eventually(context, client -> integerValue(interval) == 3 && integerValue(limit) == 128),
                 "Syncer Tune: six chests did not relax the syncer (interval " + intValue(context, interval) + ", limit " + intValue(context, limit) + ")");
 
         server.runCommand("fill " + xyz(from) + " " + xyz(to) + " minecraft:air");
-        context.waitTicks(30);
-        check(intValue(context, interval) == ownInterval && intValue(context, limit) == ownLimit,
+        check(eventually(context, client -> integerValue(interval) == ownInterval && integerValue(limit) == ownLimit),
                 "Syncer Tune: the player's values were not restored (interval " + intValue(context, interval) + ", limit " + intValue(context, limit) + ")");
     }
 
@@ -218,14 +221,32 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
             cfg.blocks = new ArrayList<>(List.of("minecraft:dirt"));
             cfg.keepInHand = new ArrayList<>();
         });
-        context.waitTicks(SETTLE);
+        // The scope is judged on the client's copy of the block, which reaches it from the server some ticks later.
+        check(eventually(context, client -> client.level.getBlockState(stone).is(Blocks.STONE) && client.level.getBlockState(dirt).is(Blocks.DIRT)),
+                "setup: the client never saw the stone at " + xyz(stone) + " and the dirt at " + xyz(dirt));
         Method trySwitch = context.computeOnClient(client -> method("fi.dy.masa.tweakeroo.util.InventoryUtils", "trySwitchToEffectiveTool", BlockPos.class));
 
         int before = Spies.TOOL_SWITCH.get();
         context.runOnClient(client -> invoke(trySwitch, null, stone));
-        check(Spies.TOOL_SWITCH.get() == before, "Tool Switch Scope: Tweakeroo switched tools for stone, which is out of scope");
+        int afterStone = Spies.TOOL_SWITCH.get();
+        if (afterStone != before) {
+            throw new AssertionError("Tool Switch Scope: Tweakeroo's tool switch ran for stone, which is out of scope; " + toolSwitchView(context, stone));
+        }
         context.runOnClient(client -> invoke(trySwitch, null, dirt));
-        check(Spies.TOOL_SWITCH.get() == before + 1, "control: Tweakeroo's tool switch did not run for dirt, which is in scope");
+        int afterDirt = Spies.TOOL_SWITCH.get();
+        if (afterDirt != afterStone + 1) {
+            throw new AssertionError("control: Tweakeroo's tool switch ran " + (afterDirt - afterStone)
+                    + " time(s) for dirt, which is in scope, instead of once; " + toolSwitchView(context, dirt));
+        }
+    }
+
+    /** What the scope check saw at {@code pos}, for a failure message. */
+    private static String toolSwitchView(ClientGameTestContext context, BlockPos pos) {
+        return context.computeOnClient(client -> {
+            BlockState state = client.level.getBlockState(pos);
+            return "the client sees " + state + " there and Cele-Tweaks " + (ToolSwitchScopeFeature.allowSwitch(state) ? "allows" : "refuses")
+                    + " the switch, holding " + client.player.getMainHandItem();
+        });
     }
 
     /** Item Scroller's mass-craft step stays off in the player inventory unless Shift is held. */
@@ -270,7 +291,25 @@ public final class CeleIntegrationGameTest implements FabricClientGameTest {
     }
 
     private static int intValue(ClientGameTestContext context, Object option) {
-        return context.computeOnClient(client -> (int) invoke(reflect(() -> option.getClass().getMethod("getIntegerValue")), option));
+        return context.computeOnClient(client -> integerValue(option));
+    }
+
+    /** A malilib integer option's value; client thread only. */
+    private static int integerValue(Object option) {
+        return (int) invoke(reflect(() -> option.getClass().getMethod("getIntegerValue")), option);
+    }
+
+    /**
+     * Waits until {@code condition} holds on the client, checking once a tick for up to {@link #TIMEOUT}
+     * ticks, and returns whether it did. For state that crosses from the server to the client, where a
+     * fixed number of ticks is a guess that can come up short.
+     */
+    private static boolean eventually(ClientGameTestContext context, Predicate<Minecraft> condition) {
+        for (int tick = 0; ; tick++) {
+            if (context.computeOnClient(condition::test)) return true;
+            if (tick >= TIMEOUT) return false;
+            context.waitTick();
+        }
     }
 
     private static Object call(ClientGameTestContext context, Method method, Object... args) {
