@@ -9,7 +9,8 @@
   "entrypoints": {
     "fabric-client-gametest": [
       "io.github.bosatsu25.celetweaks.gametest.CeleClientGameTest",
-      "io.github.bosatsu25.celetweaks.gametest.CeleGuardGameTest"
+      "io.github.bosatsu25.celetweaks.gametest.CeleGuardGameTest",
+      "io.github.bosatsu25.celetweaks.gametest.CeleIntegrationGameTest"
     ]
   },
   "mixins": [
