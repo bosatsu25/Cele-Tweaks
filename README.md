@@ -11,12 +11,14 @@ Minecraft **26.1.2 / 26.2 / 26.3** 向け Fabric クライアント専用 Tweaks
 | --- | --- |
 | [docs/DESIGN.md](docs/DESIGN.md) | アーキテクチャ、ビルド構成、設定・Mixin・外部 MOD 連携の方針、決定事項 |
 | [docs/FEATURE_CATALOG.md](docs/FEATURE_CATALOG.md) | 全 25 機能の仕様 |
+| [docs/TEST_DESIGN.md](docs/TEST_DESIGN.md) | テスト設計（単体 / client game test / 手動の分担、技法ごとのテストケース） |
 
 ## ビルド
 
 ```bash
 ./gradlew buildAll                    # 3 バージョンすべて → versions/<mc>/build/libs/
 ./gradlew :26.3:build -Pmc=26.3       # 1 バージョンだけ（他バージョンの Minecraft を取得しない）
+./gradlew :26.3:test -Pmc=26.3        # 単体テスト（JUnit 5。ウィンドウもワールドも開かない）
 ./gradlew :26.3:runClient -Pmc=26.3   # 開発用クライアント起動
 ./gradlew :26.3:runClientGameTest -Pmc=26.3   # 起動テスト（CI と同じもの。実クライアントが起動する）
 ```

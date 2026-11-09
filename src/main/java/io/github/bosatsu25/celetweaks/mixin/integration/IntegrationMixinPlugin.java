@@ -67,6 +67,20 @@ public final class IntegrationMixinPlugin implements IMixinConfigPlugin {
         for (MethodNode method : mixinInfo.getClassNode(0).methods) {
             if (method.name.startsWith(HANDLER_PREFIX)) handlers.add(method.name);
         }
+        int calls = countHandlerCalls(targetClass, handlers);
+        String name = simpleName(mixinClassName);
+        HOOKS.put(name, calls);
+        if (calls == 0) {
+            LOGGER.warn("{} found nothing to hook in {}; its feature does nothing with this version of the mod",
+                    name, targetClassName);
+        }
+    }
+
+    /**
+     * Counts the calls, anywhere in the woven target class, to one of {@code handlers} on the target
+     * class itself. Calls to other classes do not count even when the name matches.
+     */
+    static int countHandlerCalls(ClassNode targetClass, Set<String> handlers) {
         int calls = 0;
         for (MethodNode method : targetClass.methods) {
             for (AbstractInsnNode insn : method.instructions) {
@@ -75,12 +89,7 @@ public final class IntegrationMixinPlugin implements IMixinConfigPlugin {
                 }
             }
         }
-        String name = simpleName(mixinClassName);
-        HOOKS.put(name, calls);
-        if (calls == 0) {
-            LOGGER.warn("{} found nothing to hook in {}; its feature does nothing with this version of the mod",
-                    name, targetClassName);
-        }
+        return calls;
     }
 
     /** Mixin merges a handler under its own name or a generated {@code handler$...$<name>} one. */

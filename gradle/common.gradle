@@ -50,6 +50,34 @@ sourceSets {
     }
 }
 
+// Unit tests (`test`): JUnit 5 on the JVM, no window and no world. fabric-loader-junit starts Fabric
+// Loader around the test run so registries, tags and mixins behave as in the game; each test class
+// bootstraps Minecraft's registries through the version's GameBootstrap (src/mc<ver>/test). Sources
+// live in the shared src/test, like src/main; the per-version overlay adds src/<overlay>/test.
+sourceSets {
+    test {
+        java.srcDirs = [rootProject.file('src/test/java')] + overlays.collect { rootProject.file("src/${it}/test/java") }
+        resources.srcDirs = [rootProject.file('src/test/resources')]
+    }
+}
+
+dependencies {
+    testImplementation "net.fabricmc:fabric-loader-junit:${project.property('loader_version')}"
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    maxHeapSize = '2G'
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+        showStandardStreams = false
+    }
+}
+
 // CI's integration job passes -Pintegration_mods=<dir> holding the optional mods' jars, so the game
 // test runs with them installed. They are never a compile dependency.
 def integrationMods = findProperty('integration_mods')

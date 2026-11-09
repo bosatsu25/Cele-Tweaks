@@ -22,7 +22,7 @@ public final class SyncerTuneFeature extends Feature {
     private Method getter;
     private Method setter;
     private boolean resolved;
-    private boolean relaxed;
+    private final LoadHysteresis hysteresis = new LoadHysteresis();
     private int savedInterval;
     private int savedLimit;
     private int ticks;
@@ -42,10 +42,11 @@ public final class SyncerTuneFeature extends Feature {
         ticks = 0;
         if (!resolve()) return;
         int load = countBlockEntities(client, Math.max(1, Math.min(16, cfg.chunkRadius)));
-        int enter = Math.max(1, cfg.enterThreshold);
-        int exit = Math.min(enter, Math.max(0, cfg.exitThreshold));
-        if (!relaxed && load >= enter) relax(cfg);
-        else if (relaxed && load < exit) restore();
+        switch (hysteresis.sample(load, cfg.enterThreshold, cfg.exitThreshold)) {
+            case RELAX -> relax(cfg);
+            case RESTORE -> apply(savedInterval, savedLimit, "restore");
+            case NONE -> { }
+        }
     }
 
     @Override
@@ -76,26 +77,34 @@ public final class SyncerTuneFeature extends Feature {
         return count;
     }
 
+    /** Remembers the player's values and applies the relaxed ones; on failure the switch falls back to normal. */
     private void relax(Config cfg) {
         try {
             savedInterval = (int) getter.invoke(intervalOption);
             savedLimit = (int) getter.invoke(limitOption);
-            setter.invoke(intervalOption, Math.max(1, Math.min(100, cfg.relaxedQueryInterval)));
-            setter.invoke(limitOption, Math.max(1, Math.min(8192, cfg.relaxedQueryLimit)));
-            relaxed = true;
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            CeleTweaksClient.LOGGER.warn("Syncer Tune could not change TweakerMore settings", failure);
+            hysteresis.reset();
+            CeleTweaksClient.LOGGER.warn("Syncer Tune could not read TweakerMore settings", failure);
+            return;
+        }
+        if (!apply(Math.max(1, Math.min(100, cfg.relaxedQueryInterval)), Math.max(1, Math.min(8192, cfg.relaxedQueryLimit)), "change")) {
+            hysteresis.reset();
         }
     }
 
+    /** Puts the player's values back when the syncer is relaxed. */
     private void restore() {
-        if (!relaxed) return;
-        relaxed = false;
+        if (hysteresis.reset() == LoadHysteresis.Change.RESTORE) apply(savedInterval, savedLimit, "restore");
+    }
+
+    private boolean apply(int interval, int limit, String verb) {
         try {
-            setter.invoke(intervalOption, savedInterval);
-            setter.invoke(limitOption, savedLimit);
+            setter.invoke(intervalOption, interval);
+            setter.invoke(limitOption, limit);
+            return true;
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            CeleTweaksClient.LOGGER.warn("Syncer Tune could not restore TweakerMore settings", failure);
+            CeleTweaksClient.LOGGER.warn("Syncer Tune could not {} TweakerMore settings", verb, failure);
+            return false;
         }
     }
 

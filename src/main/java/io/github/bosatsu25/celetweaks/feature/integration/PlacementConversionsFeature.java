@@ -7,7 +7,9 @@ import io.github.bosatsu25.celetweaks.config.Ids;
 import io.github.bosatsu25.celetweaks.runtime.Feature;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -26,8 +28,56 @@ import java.util.List;
  * verdict; it never places or interacts by itself.
  */
 public final class PlacementConversionsFeature extends Feature {
-    private record Conversion(IdMatcher world, String schematicId, IdMatcher tool) {}
-    private record StandIn(String schematicId, String placeableId) {}
+    /** "{@code world -> schematic with tool}": tool on a world block gives the schematic block. */
+    record Conversion(IdMatcher world, String schematicId, IdMatcher tool) {
+        static final String ARROW = "->";
+        static final String WITH = " with ";
+
+        /** Parses one line, or returns null when it lacks the arrow, the " with " after it, or a valid target id. */
+        static Conversion parse(String line) {
+            if (line == null) return null;
+            int arrow = line.indexOf(ARROW);
+            int with = line.indexOf(WITH);
+            if (arrow < 0 || with < arrow) return null;
+            String target = Ids.normalize(line.substring(arrow + ARROW.length(), with));
+            if (target == null) return null;
+            return new Conversion(IdMatcher.parse(line.substring(0, arrow)), target, IdMatcher.parse(line.substring(with + WITH.length())));
+        }
+
+        static List<Conversion> compile(List<String> lines) {
+            if (lines == null) return List.of();
+            List<Conversion> out = new ArrayList<>();
+            for (String line : lines) {
+                Conversion rule = parse(line);
+                if (rule != null) out.add(rule);
+            }
+            return List.copyOf(out);
+        }
+    }
+
+    /** "{@code schematic = placeable}": the right-hand block may stand where the schematic has the left-hand one. */
+    record StandIn(String schematicId, String placeableId) {
+        /** Parses one line, or returns null when it lacks "=" or either side is not a valid id. */
+        static StandIn parse(String line) {
+            if (line == null) return null;
+            int eq = line.indexOf('=');
+            if (eq < 0) return null;
+            String schematic = Ids.normalize(line.substring(0, eq));
+            String placeable = Ids.normalize(line.substring(eq + 1));
+            if (schematic == null || placeable == null) return null;
+            return new StandIn(schematic, placeable);
+        }
+
+        static List<StandIn> compile(List<String> lines) {
+            if (lines == null) return List.of();
+            List<StandIn> out = new ArrayList<>();
+            for (String line : lines) {
+                StandIn rule = parse(line);
+                if (rule != null) out.add(rule);
+            }
+            return List.copyOf(out);
+        }
+    }
 
     private static volatile List<String> compiledConversionsFrom;
     private static volatile List<Conversion> conversions = List.of();
@@ -43,25 +93,36 @@ public final class PlacementConversionsFeature extends Feature {
     }
 
     public static boolean acceptsStandIn(Block schematic, Block placed) {
+        return standsIn(standIns(), schematic, placed);
+    }
+
+    public static boolean acceptsConversion(Player player, BlockState world, BlockState schematic) {
+        return converts(conversions(), config().builtInAxeStripping, player.getMainHandItem(), world, schematic);
+    }
+
+    /** True when a rule names exactly this schematic block and this placed block, in that order. */
+    static boolean standsIn(List<StandIn> rules, Block schematic, Block placed) {
         String s = Ids.of(schematic);
         String p = Ids.of(placed);
-        for (StandIn rule : standIns()) {
+        for (StandIn rule : rules) {
             if (rule.schematicId().equals(s) && rule.placeableId().equals(p)) return true;
         }
         return false;
     }
 
-    public static boolean acceptsConversion(Player player, BlockState world, BlockState schematic) {
+    /**
+     * True when the held item applied to the world block is expected to give the schematic block:
+     * either the built-in axe stripping ("x" to "stripped_x" with any axe, when switched on) or a rule
+     * whose world and tool matchers both match and whose target is the schematic block.
+     */
+    static boolean converts(List<Conversion> rules, boolean builtInAxeStripping, ItemStack held, BlockState world, BlockState schematic) {
         String schematicId = Ids.of(schematic.getBlock());
-        Config cfg = config();
-        if (cfg.builtInAxeStripping && player.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES)) {
+        if (builtInAxeStripping && held.is(ItemTags.AXES)) {
             Identifier worldKey = BuiltInRegistries.BLOCK.getKey(world.getBlock());
             if (schematicId.equals(worldKey.getNamespace() + ":stripped_" + worldKey.getPath())) return true;
         }
-        for (Conversion rule : conversions()) {
-            if (rule.schematicId().equals(schematicId) && rule.world().matches(world) && rule.tool().matches(player.getMainHandItem())) {
-                return true;
-            }
+        for (Conversion rule : rules) {
+            if (rule.schematicId().equals(schematicId) && rule.world().matches(world) && rule.tool().matches(held)) return true;
         }
         return false;
     }
@@ -73,16 +134,7 @@ public final class PlacementConversionsFeature extends Feature {
     private static List<Conversion> conversions() {
         List<String> source = config().conversions;
         if (!source.equals(compiledConversionsFrom)) {
-            List<Conversion> out = new ArrayList<>();
-            for (String line : source) {
-                int arrow = line.indexOf("->");
-                int with = line.indexOf(" with ");
-                if (arrow < 0 || with < arrow) continue;
-                String target = Ids.normalize(line.substring(arrow + 2, with));
-                if (target == null) continue;
-                out.add(new Conversion(IdMatcher.parse(line.substring(0, arrow)), target, IdMatcher.parse(line.substring(with + 6))));
-            }
-            conversions = List.copyOf(out);
+            conversions = Conversion.compile(source);
             compiledConversionsFrom = List.copyOf(source);
         }
         return conversions;
@@ -91,15 +143,7 @@ public final class PlacementConversionsFeature extends Feature {
     private static List<StandIn> standIns() {
         List<String> source = config().standIns;
         if (!source.equals(compiledStandInsFrom)) {
-            List<StandIn> out = new ArrayList<>();
-            for (String line : source) {
-                int eq = line.indexOf('=');
-                if (eq < 0) continue;
-                String schematic = Ids.normalize(line.substring(0, eq));
-                String placeable = Ids.normalize(line.substring(eq + 1));
-                if (schematic != null && placeable != null) out.add(new StandIn(schematic, placeable));
-            }
-            standIns = List.copyOf(out);
+            standIns = StandIn.compile(source);
             compiledStandInsFrom = List.copyOf(source);
         }
         return standIns;

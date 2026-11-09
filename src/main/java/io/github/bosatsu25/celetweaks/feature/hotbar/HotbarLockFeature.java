@@ -44,10 +44,17 @@ public final class HotbarLockFeature extends Feature {
                 locked.get(slot) ? "celetweaks.hotbar_lock.locked" : "celetweaks.hotbar_lock.unlocked", slot + 1));
     }
 
-    /** Locked hotbar slots, 0-based. Parsed from "1 5 9" style text (1-based for people). */
+    /** Locked hotbar slots, 0-based, from the current config. */
     public static BitSet lockedSlots() {
+        return parseLockedSlots(CeleConfig.get().section(FeatureDefinition.HOTBAR_LOCK, Config.class).lockedSlots);
+    }
+
+    /**
+     * Parses "1 5 9" style text (1-based for people) into 0-based slots. Any run of non-digits
+     * separates numbers; numbers outside 1-9 and unparsable tokens are ignored.
+     */
+    public static BitSet parseLockedSlots(String text) {
         BitSet result = new BitSet(9);
-        String text = CeleConfig.get().section(FeatureDefinition.HOTBAR_LOCK, Config.class).lockedSlots;
         if (text == null) return result;
         for (String token : text.split("[^0-9]+")) {
             if (token.isEmpty()) continue;

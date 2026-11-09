@@ -76,7 +76,7 @@ Mixin のターゲット名は javac では検証されない（間違ってい�
 
 ### 2.3 CI / リリース
 
-- PR と main への push で、3 版をマトリクスで並列ビルド（`./gradlew :<mc>:build -Pmc=<mc>`）。
+- PR と main への push で、3 版をマトリクスで並列に、まず単体テスト（`./gradlew :<mc>:test -Pmc=<mc>`、`src/test`、JUnit 5 + fabric-loader-junit）、次にビルド（`./gradlew :<mc>:build -Pmc=<mc>`）。単体テストの設計は [TEST_DESIGN.md](TEST_DESIGN.md)。失敗時はテストレポートを成果物に残す。
 - 毎回、Maven リポジトリの最新版一覧と、各版の API 署名ダンプをログに出す。
 - 続けて client game test を仮想ディスプレイ上で実行（`./gradlew :<mc>:runClientGameTest -Pmc=<mc>`）。次の順に進み、クラッシュ・起動段の失敗・隔離が 1 件でもあれば失敗。スクリーンショットとログは成果物として 7 日間保存。
   1. 使える機能をすべて ON にする（通常のジョブでは Core / Vanilla、integration ジョブでは連携機能も）。
@@ -105,6 +105,9 @@ io.github.bosatsu25.celetweaks
 ├── feature/<area>/             # 機能本体
 ├── mixin/                      # バニラ対象 / integration（外部 MOD 対象）
 └── compat/ (src/mc<v>)         # 版差分
+
+src/test/java/...               # 単体テスト（JUnit 5）。版差分は src/mc<v>/test/java（GameBootstrap）
+src/gametest/java/...           # client game test（CI 専用、実クライアント）
 ```
 
 - **1 機能 = 1 `FeatureDefinition`**。設定キー、翻訳キー、設定画面の行、ホットキーはこの enum から導出する。
@@ -167,6 +170,6 @@ io.github.bosatsu25.celetweaks
 
 ## 8. 未確認事項
 
-1. 各機能が意図どおりに働くか。バニラのガード 5 機能と連携 7 機能は、client game test で対照と並べて確認済み。[確実] Syncmatica削除ロック・Tweakeroo再同期・素材リストの再集計、描画・画面表示の見た目、ホットキーの操作感は未確認。
+1. 各機能が意図どおりに働くか。バニラのガード 5 機能と連携 7 機能は、client game test で対照と並べて確認済み。[確実] ルール解析・ID マッチング・判定・同期チューニングの状態遷移は単体テストで網羅（[TEST_DESIGN.md](TEST_DESIGN.md)）。[確実] Syncmatica削除ロック・Tweakeroo再同期・素材リストの再集計、描画・画面表示の見た目、ホットキーの操作感は未確認。
 2. 外部 MOD 連携の接続先は、各 MOD の 26.1.2 / 26.2 / 26.3 向けソースで実在を確認済み（[FEATURE_CATALOG.md](FEATURE_CATALOG.md) 末尾の表）。[確実] 実際に配布されている JAR へのフックは CI の integration ジョブで確かめていて、3 版とも 8 個すべてがフックした（2026-10-31）。[確実] 連携機能が意図どおりに働くか（判定の中身）は未確認。
 3. Sodium 導入時、溶岩源の色付けは表示されない（Sodium が流体描画を置き換える）。[可能性が高い]
