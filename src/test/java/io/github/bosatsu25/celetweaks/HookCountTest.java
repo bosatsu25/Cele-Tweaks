@@ -1,4 +1,6 @@
-package io.github.bosatsu25.celetweaks.mixin.integration;
+package io.github.bosatsu25.celetweaks;
+
+import io.github.bosatsu25.celetweaks.mixin.integration.IntegrationMixinPlugin;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
@@ -16,6 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * wove nothing. Partitions of a call instruction: our handler by its plain name, by the
  * {@code handler$...$name} name Mixin generates, a same-named method on another class, an unrelated
  * method on the target; plus a target with no calls at all.
+ * <p>
+ * Lives outside the {@code mixin} packages: Mixin owns the classes declared there and refuses to
+ * load a test class placed among them.
  */
 class HookCountTest {
     private static final String TARGET = "fi/dy/masa/example/Target";

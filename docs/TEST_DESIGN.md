@@ -95,15 +95,15 @@ JSTQB Foundation Level シラバス v4.0（以下「シラバス」）の用語�
 | 任意の空白区切り（`parse`） | `" stone \t minecraft:dirt\ncobblestone "` | 3 つに一致 |
 | 同じ ID のブロック / アイテム / エンティティ | `["minecraft:stone", "pig"]` | それぞれの型で一致、別 ID は不一致 |
 | 空のアイテムスタック / null | `ItemStack.EMPTY`, `null` | 不一致（`minecraft:air` を列挙していても） |
-| タグ | `["#minecraft:logs"]` | 空ではない。データ未ロードでも例外を出さない |
+| タグ | `["#minecraft:logs"]` | 空ではない（解析まで）。ID とタグの混在では、ID が先に判定されるので ID の一致はタグ未結合でも成立する |
 
-タグの **所属判定** はゲームのデータロード後にしか意味を持たないので、単体では「解析されること」「例外を出さないこと」までとし、タグ経由の一致はゲームテストに委ねる（§5 参照）。
+タグの **所属判定** はゲームのデータロード後にしか成立しない。データ未ロードのレジストリにタグを問い合わせると `IllegalStateException: Tags not bound` になる（CI で確認済み。ゲーム内ではログイン時にタグが結合されるので起きない）。単体では「解析されること」までとし、タグ経由の一致はゲームテストに委ねる（§4 参照）。
 
 **ルール行の解析** — `ItemUseGuardRulesTest`、`PlacementConversionRulesTest`
 
 | 構文 | 有効の代表 | 無効のパーティション |
 | --- | --- | --- |
-| `item_or_#tag: block_or_#tag ...`（最初の `": "` で分割） | `minecraft:bone_meal: #minecraft:saplings minecraft:grass_block` | 区切りなし（`cobblestone:stone`、`cobblestone :stone`、ID 単独）、null、空 |
+| `item_or_#tag: block_or_#tag ...`（最初の `": "` で分割） | `minecraft:bone_meal: minecraft:grass_block minecraft:dirt` | 区切りなし（`cobblestone:stone`、`cobblestone :stone`、ID 単独）、null、空 |
 | 右辺が空の行 | `cobblestone: ` | 有効だが「そのアイテムはどこにも使えない」という意味になることを確認 |
 | `schematic = placeable` | ` stone = minecraft:cobblestone `、`minecraft:stone=cobblestone` | `=` なし、片側が無効 ID、片側が空 |
 | `world -> schematic with tool` | ` oak_log birch_log -> stripped_oak_log with iron_axe minecraft:stone_axe ` | `->` なし、` with ` なし、` with ` が `->` より前、ターゲットが無効 ID、ターゲットが空 |
@@ -230,7 +230,7 @@ JSTQB Foundation Level シラバス v4.0（以下「シラバス」）の用語�
 
 | 対象 | 単体にできない理由 | 代わりに |
 | --- | --- | --- |
-| タグ経由の一致（`#minecraft:logs` 等）、組み込みの斧剥ぎ（`#minecraft:axes`） | タグの所属はデータパックのロード後にしか結びつかない | integration ゲームテスト（斧で原木 → 皮を剥いだ原木を GOOD_INTERACTION） |
+| タグ経由の一致（`#minecraft:logs` 等）、組み込みの斧剥ぎ（`#minecraft:axes`） | タグの所属はデータパックのロード後にしか結びつかず、未結合のまま問い合わせると `Tags not bound` で例外になる | integration ゲームテスト（斧で原木 → 皮を剥いだ原木を GOOD_INTERACTION） |
 | `NoDigUnderfootFeature.isUnderfoot` | `Player` の実体（接地・速度・当たり判定）が必要 | `CeleGuardGameTest.noDigUnderfoot` |
 | `PortalProtectionFeature` | `Level` とポータルブロックの向きが必要 | `CeleGuardGameTest.portalFrame` / `portalDoorway` |
 | `CeleConfig`（シングルトン、`FabricLoader` の設定ディレクトリ） | 共有状態。`JsonFiles` に委譲している部分だけ単体で確認 | 起動段 `config` の成否、全設定画面を開く |
@@ -247,4 +247,6 @@ JSTQB Foundation Level シラバス v4.0（以下「シラバス」）の用語�
 
 - テストは `fabric-loader-junit` の下で走る（Fabric Loader が JUnit の周りで起動し、Mixin とレジストリがゲームと同じ振る舞いをする）。レジストリを使うテストクラスは `@BeforeAll` で `GameBootstrap.ensure()` を呼ぶ。`GameBootstrap` は版ごとに `src/mc<版>/test/java` にあり、26.3 だけアイテムコンポーネントの初期化手順が違う。
 - **`@BeforeAll` より先に走る static 初期化子で `Blocks` / `Items` に触れてはいけない**（レジストリ未初期化で落ちる）。テストの固定値はインスタンスフィールドかメソッド内に置く。
+- **テストクラスを `mixin` パッケージ（`*.mixins.json` が宣言するパッケージ）に置いてはいけない**。Mixin がそのパッケージのクラスを自分の物として扱い、テストクラスのロードを拒む（`HookCountTest` はルートパッケージにある）。
+- エンティティ種別は版によって定数名が無いので、`Registry.entity("minecraft:pig")` のように ID でレジストリから引く。
 - CI では `build` ジョブの最初の Gradle ステップとして 3 版で実行し、失敗時は HTML レポートと JUnit XML を成果物に残す。

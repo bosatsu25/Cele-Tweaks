@@ -78,9 +78,10 @@ public final class IntegrationMixinPlugin implements IMixinConfigPlugin {
 
     /**
      * Counts the calls, anywhere in the woven target class, to one of {@code handlers} on the target
-     * class itself. Calls to other classes do not count even when the name matches.
+     * class itself. Calls to other classes do not count even when the name matches. Public for the
+     * unit test, which cannot live in this package (Mixin owns the classes declared here).
      */
-    static int countHandlerCalls(ClassNode targetClass, Set<String> handlers) {
+    public static int countHandlerCalls(ClassNode targetClass, Set<String> handlers) {
         int calls = 0;
         for (MethodNode method : targetClass.methods) {
             for (AbstractInsnNode insn : method.instructions) {
