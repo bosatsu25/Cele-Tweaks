@@ -42,11 +42,12 @@ class ItemUseGuardRulesTest {
 
     @Test
     void aRuleSplitsAtTheFirstColonSpaceSoIdsKeepTheirNamespace() {
-        Rule rule = Rule.parse("minecraft:bone_meal: #minecraft:saplings minecraft:grass_block");
+        Rule rule = Rule.parse("minecraft:bone_meal: minecraft:grass_block minecraft:dirt");
         assertNotNull(rule);
         assertTrue(rule.items().matches(new ItemStack(Items.BONE_MEAL)));
         assertFalse(rule.items().matches(new ItemStack(Items.STICK)));
         assertTrue(rule.targets().matches(grass));
+        assertTrue(rule.targets().matches(dirt));
         assertFalse(rule.targets().matches(stone));
     }
 

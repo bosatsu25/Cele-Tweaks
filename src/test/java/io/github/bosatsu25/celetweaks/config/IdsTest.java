@@ -1,7 +1,7 @@
 package io.github.bosatsu25.celetweaks.config;
 
 import io.github.bosatsu25.celetweaks.testsupport.GameBootstrap;
-import net.minecraft.world.entity.EntityType;
+import io.github.bosatsu25.celetweaks.testsupport.Registry;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,6 +58,6 @@ class IdsTest {
     void registryIdsReadBackAsFullIds() {
         assertEquals("minecraft:stone", Ids.of(Blocks.STONE));
         assertEquals("minecraft:stick", Ids.of(Items.STICK));
-        assertEquals("minecraft:pig", Ids.of(EntityType.PIG));
+        assertEquals("minecraft:pig", Ids.of(Registry.entity("minecraft:pig")));
     }
 }

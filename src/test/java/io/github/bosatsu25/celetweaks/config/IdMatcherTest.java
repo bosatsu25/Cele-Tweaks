@@ -1,7 +1,7 @@
 package io.github.bosatsu25.celetweaks.config;
 
 import io.github.bosatsu25.celetweaks.testsupport.GameBootstrap;
-import net.minecraft.world.entity.EntityType;
+import io.github.bosatsu25.celetweaks.testsupport.Registry;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,8 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * {@link IdMatcher}: how a configured id list is compiled and matched. Partitions of the input list
  * (nothing, blanks, ids, tags, junk) and of the thing matched (listed, unlisted, empty stack).
- * Tag membership needs the game's data to be loaded, so only the parsing of tags is checked here;
- * matching through a tag is proven by the client game test.
+ * Tag membership needs the game's data: without it the registry throws "Tags not bound" on any tag
+ * query, so only the parsing of tags is checked here and matching through a tag is proven by the
+ * client game test.
  */
 class IdMatcherTest {
     @BeforeAll
@@ -51,7 +51,7 @@ class IdMatcherTest {
         assertTrue(matcher.isEmpty());
         assertFalse(matcher.matches(Blocks.STONE.defaultBlockState()));
         assertFalse(matcher.matches(new ItemStack(Items.STONE)));
-        assertFalse(matcher.matches(EntityType.PIG));
+        assertFalse(matcher.matches(Registry.entity("minecraft:pig")));
     }
 
     @Test
@@ -69,8 +69,8 @@ class IdMatcherTest {
         assertTrue(matcher.matches(Blocks.STONE.defaultBlockState()));
         assertTrue(matcher.matches(new ItemStack(Items.STONE)));
         assertFalse(matcher.matches(new ItemStack(Items.COBBLESTONE)));
-        assertTrue(matcher.matches(EntityType.PIG));
-        assertFalse(matcher.matches(EntityType.COW));
+        assertTrue(matcher.matches(Registry.entity("minecraft:pig")));
+        assertFalse(matcher.matches(Registry.entity("minecraft:cow")));
     }
 
     @Test
@@ -81,11 +81,15 @@ class IdMatcherTest {
     }
 
     @Test
-    void aTagEntryCompilesToATagMatcherAndIsSafeToQueryWithoutData() {
-        IdMatcher matcher = IdMatcher.of(List.of("#minecraft:logs"));
-        assertFalse(matcher.isEmpty(), "a tag counts as content even though no id was listed");
-        assertDoesNotThrow(() -> matcher.matches(Blocks.OAK_LOG.defaultBlockState()));
-        assertDoesNotThrow(() -> matcher.matches(new ItemStack(Items.OAK_LOG)));
-        assertDoesNotThrow(() -> matcher.matches(EntityType.PIG));
+    void aTagEntryCompilesToATagMatcher() {
+        assertFalse(IdMatcher.of(List.of("#minecraft:logs")).isEmpty(), "a tag counts as content even though no id was listed");
+        assertFalse(IdMatcher.parse("#minecraft:logs #c:ores").isEmpty());
+    }
+
+    @Test
+    void idsAreCheckedBeforeTagsSoAListedIdMatchesEvenWhenTagsAreUnbound() {
+        IdMatcher matcher = IdMatcher.of(List.of("#minecraft:logs", "stone"));
+        assertTrue(matcher.matches(Blocks.STONE.defaultBlockState()));
+        assertTrue(matcher.matches(new ItemStack(Items.STONE)));
     }
 }
