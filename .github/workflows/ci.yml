@@ -57,6 +57,22 @@ jobs:
           echo "== fabric-loom (last 8)"
           curl -sS https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -n 8
 
+      # JUnit 5 on the JVM (src/test): rule parsing, matching and the pure decision logic, run
+      # under fabric-loader-junit with Minecraft's registries bootstrapped. No window, no world.
+      - name: Unit tests
+        run: ./gradlew ":${{ matrix.mc }}:test" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+
+      - name: Upload unit test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-tests-mc${{ matrix.mc }}
+          path: |
+            versions/${{ matrix.mc }}/build/reports/tests/test/
+            versions/${{ matrix.mc }}/build/test-results/test/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Build
         run: ./gradlew ":${{ matrix.mc }}:build" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 

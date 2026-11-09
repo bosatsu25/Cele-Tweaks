@@ -31,8 +31,7 @@ public final class SlowLookFeature extends Feature {
         boolean wanted = isEnabled() && client.player != null && HotkeyManager.isHeld(HOLD_ACTION);
         if (wanted && original == null) {
             original = client.options.sensitivity().get();
-            double factor = Math.max(1, Math.min(100, config(Config.class).factorPercent)) / 100.0;
-            client.options.sensitivity().set(Math.max(0.0, Math.min(1.0, original * factor)));
+            client.options.sensitivity().set(scaledSensitivity(original, config(Config.class).factorPercent));
         } else if (!wanted) {
             restore(client);
         }
@@ -46,6 +45,16 @@ public final class SlowLookFeature extends Feature {
     @Override
     public void onQuarantined(Minecraft client) {
         restore(client);
+    }
+
+    /**
+     * The sensitivity to use while the key is held: {@code original} scaled by {@code factorPercent},
+     * which is clamped to 1-100 so the look can slow down but never stop or speed up. The result stays
+     * inside the option's 0-1 range.
+     */
+    static double scaledSensitivity(double original, int factorPercent) {
+        double factor = Math.max(1, Math.min(100, factorPercent)) / 100.0;
+        return Math.max(0.0, Math.min(1.0, original * factor));
     }
 
     private void restore(Minecraft client) {
