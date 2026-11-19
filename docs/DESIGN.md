@@ -77,6 +77,7 @@ Mixin のターゲット名は javac では検証されない（間違ってい�
 ### 2.3 CI / リリース
 
 - PR と main への push で、3 版をマトリクスで並列に、まず単体テスト（`./gradlew :<mc>:test -Pmc=<mc>`、`src/test`、JUnit 5 + fabric-loader-junit）、次にビルド（`./gradlew :<mc>:build -Pmc=<mc>`）。単体テストの設計は [TEST_DESIGN.md](TEST_DESIGN.md)。失敗時はテストレポートを成果物に残す。
+- Gradle の呼び出しは `.github/scripts/gradle.sh` 経由。リポジトリが依存を返さなかったとき（Maven Central の CDN が実在する成果物に 404 を返した例がある。2026-11-19）だけ、1 分待って `--refresh-dependencies` 付きで 1 回やり直す。テストの失敗はやり直さない。
 - 毎回、Maven リポジトリの最新版一覧と、各版の API 署名ダンプをログに出す。
 - 続けて client game test を仮想ディスプレイ上で実行（`./gradlew :<mc>:runClientGameTest -Pmc=<mc>`）。次の順に進み、クラッシュ・起動段の失敗・隔離が 1 件でもあれば失敗。スクリーンショットとログは成果物として 7 日間保存。
   1. 使える機能をすべて ON にする（通常のジョブでは Core / Vanilla、integration ジョブでは連携機能も）。

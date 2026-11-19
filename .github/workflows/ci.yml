@@ -57,10 +57,13 @@ jobs:
           echo "== fabric-loom (last 8)"
           curl -sS https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -n 8
 
+      # Every Gradle call goes through .github/scripts/gradle.sh, which retries once, after a minute
+      # and with --refresh-dependencies, when a repository failed to serve a dependency. Nothing else
+      # is retried.
       # JUnit 5 on the JVM (src/test): rule parsing, matching and the pure decision logic, run
       # under fabric-loader-junit with Minecraft's registries bootstrapped. No window, no world.
       - name: Unit tests
-        run: ./gradlew ":${{ matrix.mc }}:test" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+        run: .github/scripts/gradle.sh ":${{ matrix.mc }}:test" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 
       - name: Upload unit test report
         if: failure()
@@ -74,7 +77,7 @@ jobs:
           retention-days: 7
 
       - name: Build
-        run: ./gradlew ":${{ matrix.mc }}:build" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+        run: .github/scripts/gradle.sh ":${{ matrix.mc }}:build" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 
       # Always printed: javac does not check mixin target names. The dump shows the real
       # signatures when porting; the client game test below proves the targets at runtime.
@@ -98,7 +101,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb mesa-vulkan-drivers
-          ./gradlew ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
+          .github/scripts/gradle.sh ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" --stacktrace --no-daemon
 
       - name: Upload game test output
         if: always()
@@ -152,7 +155,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb mesa-vulkan-drivers
-          ./gradlew ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" \
+          .github/scripts/gradle.sh ":${{ matrix.mc }}:runClientGameTest" -Pmc="${{ matrix.mc }}" \
             -Pintegration_mods="$RUNNER_TEMP/integration-mods" --stacktrace --no-daemon
 
       - name: Upload game test output
