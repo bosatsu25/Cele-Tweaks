@@ -10,6 +10,8 @@ base { archivesName = rootProject.property('archives_base_name') }
 repositories {
     maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/releases/' }
     mavenCentral()
+    // Same fallback as in settings.gradle.kts: a second route to Maven Central's artifacts.
+    maven { name = 'MavenCentralMirror'; url = 'https://maven-central.storage-download.googleapis.com/maven2/' }
 }
 
 dependencies {
