@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Checks that the vanilla guards stop what they should and nothing else. Each case performs the action
@@ -116,7 +117,7 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         attack(context, site.frameBottom());
         attack(context, site.looseObsidian());
         awaitServer(context, server, s -> blockAt(s, site.looseObsidian()) == Blocks.AIR,
-                "control: loose obsidian was not broken, so the attack did nothing");
+                () -> "control: loose obsidian was not broken, so the attack did nothing");
         check(blockAt(server, site.frameBottom()) == Blocks.OBSIDIAN, "Portal Frame Protection: the portal frame was broken");
         check(blockAt(server, site.frameBottom().above()) == Blocks.NETHER_PORTAL, "Portal Frame Protection: the portal went out");
     }
@@ -126,7 +127,7 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         useOnTop(context, site.doorwaySupport());
         useOnTop(context, site.openStone());
         awaitServer(context, server, s -> blockAt(s, site.openStone().above()) == Blocks.COBBLESTONE,
-                "control: cobblestone was not placed on open ground");
+                () -> "control: cobblestone was not placed on open ground");
         check(blockAt(server, site.doorwaySupport().above()) == Blocks.AIR, "Clear Portal Doorway: a block was placed in the doorway");
     }
 
@@ -135,15 +136,16 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         useOnTop(context, site.ruleDirt());
         useOnTop(context, site.ruleStone());
         awaitServer(context, server, s -> blockAt(s, site.ruleStone().above()) == Blocks.COBBLESTONE,
-                "control: cobblestone was not placed on stone, which the rule allows");
+                () -> "control: cobblestone was not placed on stone, which the rule allows");
         check(blockAt(server, site.ruleDirt().above()) == Blocks.AIR, "Item Use Guard: cobblestone was placed on dirt against the rule");
     }
 
     /**
      * Hotbar Lock: with every hotbar slot full and the locked slot selected, vanilla Pick Block would
-     * overwrite that slot. Locked, the pick is refused; unlocked, the same pick overwrites it. Pick Block
-     * changes the client's inventory on the spot, so the locked case is read on the client right after
-     * the pick, and the control is read on the server once the pick has reached it.
+     * overwrite that slot. Locked, the pick is refused; unlocked, the same pick overwrites it. Since
+     * 26.x Pick Block asks the server to move the item, so both outcomes are read on the server: the
+     * locked one after a marker attack proves the (never sent) pick would have arrived, the control
+     * once the server shows the dirt in the slot.
      */
     private static void hotbarLock(ClientGameTestContext context, TestServerContext server, Site site) {
         server.runCommand("clear @p");
@@ -155,42 +157,50 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
         context.waitFor(client -> client.player.getInventory().getSelectedSlot() == 0 && clientHotbar(client).equals(fullHotbar()));
 
         pickBlock(context, site.ruleDirt());
-        List<Item> afterLocked = context.computeOnClient(CeleGuardGameTest::clientHotbar);
+        settle(context, server, site);
+        List<Item> afterLocked = server.computeOnServer(CeleGuardGameTest::serverHotbar);
         check(afterLocked.getFirst() == Items.DIAMOND, "Hotbar Lock: Pick Block overwrote the locked slot; hotbar " + afterLocked);
 
         setLockedSlots(context, "");
         pickBlock(context, site.ruleDirt());
-        List<Item> afterUnlocked = context.computeOnClient(CeleGuardGameTest::clientHotbar);
-        check(afterUnlocked.getFirst() == Items.DIRT,
-                "control: unlocked Pick Block did not replace the selected slot, so the pick did nothing; hotbar " + afterUnlocked);
-        awaitServer(context, server, s -> serverHotbar(s).getFirst() == Items.DIRT,
-                "control: the unlocked pick never reached the server");
+        awaitServer(context, server, s -> serverHotbar(s).getFirst() == Items.DIRT, () ->
+                "control: unlocked Pick Block did not replace the selected slot, so the pick did nothing; hotbar "
+                        + server.computeOnServer(CeleGuardGameTest::serverHotbar));
     }
 
     /**
      * No Digging Underfoot: the block under a moving player survives; standing still, it breaks. Both
-     * attempts hit the same block, so a marker block attacked after the guarded attempt, and seen broken
-     * on the server, stands in for the control as proof that the guarded attempt has been delivered.
+     * attempts hit the same block, so the marker attack stands in for the control as proof that the
+     * guarded attempt has been delivered.
      */
     private static void noDigUnderfoot(ClientGameTestContext context, TestServerContext server, Site site) {
         Block ground = blockAt(server, site.underfoot());
         check(ground != Blocks.AIR, "setup: nothing under the player");
-        setblock(server, site.marker(), "minecraft:stone");
-        context.waitFor(client -> client.level.getBlockState(site.marker()).is(Blocks.STONE));
 
         context.runOnClient(client -> {
             client.player.setDeltaMovement(0.2, 0.0, 0.0);
             client.gameMode.startDestroyBlock(site.underfoot(), Direction.UP);
         });
-        attack(context, site.marker());
-        awaitServer(context, server, s -> blockAt(s, site.marker()) == Blocks.AIR, "control: the marker block was not broken, so attacks do nothing");
+        settle(context, server, site);
         check(blockAt(server, site.underfoot()) == ground, "No Digging Underfoot: the block under the moving player was broken");
 
         context.runOnClient(client -> {
             client.player.setDeltaMovement(0.0, 0.0, 0.0);
             client.gameMode.startDestroyBlock(site.underfoot(), Direction.UP);
         });
-        awaitServer(context, server, s -> blockAt(s, site.underfoot()) == Blocks.AIR, "control: the block under the standing player was not broken");
+        awaitServer(context, server, s -> blockAt(s, site.underfoot()) == Blocks.AIR, () -> "control: the block under the standing player was not broken");
+    }
+
+    /**
+     * Proves that every action the client has sent so far has reached the server: places a marker
+     * block, waits until the client sees it, attacks it, and waits until the server shows it broken.
+     * The client sends its actions in order, so anything sent before the attack arrived before it.
+     */
+    private static void settle(ClientGameTestContext context, TestServerContext server, Site site) {
+        setblock(server, site.marker(), "minecraft:stone");
+        context.waitFor(client -> client.level.getBlockState(site.marker()).is(Blocks.STONE));
+        attack(context, site.marker());
+        awaitServer(context, server, s -> blockAt(s, site.marker()) == Blocks.AIR, () -> "control: the marker block was not broken, so attacks do nothing");
     }
 
     private static void attack(ClientGameTestContext context, BlockPos pos) {
@@ -220,12 +230,12 @@ public final class CeleGuardGameTest implements FabricClientGameTest {
      * the server; fails with {@code message} otherwise. The outcome of a client action crosses to the
      * server some ticks later, and how many is not fixed.
      */
-    private static void awaitServer(ClientGameTestContext context, TestServerContext server, Predicate<MinecraftServer> condition, String message) {
+    private static void awaitServer(ClientGameTestContext context, TestServerContext server, Predicate<MinecraftServer> condition, Supplier<String> message) {
         for (int tick = 0; tick < TIMEOUT; tick++) {
             if (server.computeOnServer(condition::test)) return;
             context.waitTick();
         }
-        check(server.computeOnServer(condition::test), message + " (after " + TIMEOUT + " ticks)");
+        if (!server.computeOnServer(condition::test)) throw new AssertionError(message.get() + " (after " + TIMEOUT + " ticks)");
     }
 
     private static Block blockAt(TestServerContext server, BlockPos pos) {
