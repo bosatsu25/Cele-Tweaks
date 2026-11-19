@@ -2,6 +2,9 @@ pluginManagement {
     repositories {
         maven("https://maven.fabricmc.net/") { name = "Fabric" }
         gradlePluginPortal()
+        // Loom's own dependencies (gson, asm, ...) come from Maven Central; the Fabric Maven does not
+        // mirror all of them and the plugin portal stopped resolving gson 2.14.0 (CI, 2026-11-19).
+        mavenCentral()
     }
 }
 
